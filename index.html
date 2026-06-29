@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no" />
+    <title>Grand Theft Auto: Vice City</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body
+    data-is-touch="0"
+    data-state-car="0"
+    data-state-car-gun="0"
+    data-state-gun="0"
+    data-state-bike="0"
+    data-state-menu="1"
+    data-state-cutscene="0"
+    data-state-mobring="0"
+    data-state-job="0"
+    data-state-disable-controls="0"
+    data-state-panzer="0"
+    data-state-car-with-weapon="0"
+    data-state-hunter="0"
+    data-state-scope-mode="0"
+    data-state-scope-gun="0"
+>
+    <div class="wasted-container" hidden></div>
+
+    <div class="start-container">
+        <div class="button-container">
+            <div class="cover"></div>
+            <div class="right-column">
+                <div id="config-panel" class="config-panel">
+                    <div class="config-option">
+                        <label for="config-mode">
+                            <span>Mode:</span>
+                            <select id="config-mode">
+                                <option value="auto">Auto (detect)</option>
+                                <option value="touch" selected>Touch</option>
+                                <option value="desktop">Desktop</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div class="config-option">
+                        <label for="config-touch-controls">
+                            <input type="checkbox" id="config-touch-controls" checked>
+                            <span>Show touch controls</span>
+                        </label>
+                    </div>
+                    <div class="config-option">
+                        <label for="config-cheats">
+                            <input type="checkbox" id="config-cheats" checked>
+                            <span>Cheats</span>
+                        </label>
+                    </div>
+                    <div class="config-option">
+                        <label for="config-lowmem">
+                            <input type="checkbox" id="config-lowmem">
+                            <span>Low Memory Mode</span>
+                        </label>
+                    </div>
+                    <div class="config-option">
+                        <label for="config-max-fps">
+                            <span>Max FPS:</span>
+                            <input type="number" id="config-max-fps" min="0" max="240" value="0">
+                            <span>(0 = unlimited)</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="click-to-play">
+                    <button id="click-to-play-button">Click to play</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()"></canvas>
+
+    <div class="touch-controls-wrapper" id="touch-controls-wrapper">
+        <div id="move"></div>
+        <div id="look"></div>
+        <div class="touch-control radio"></div>
+        <div class="touch-control weapon"></div>
+        <div class="touch-control menu"></div>
+        <div class="touch-control fist"></div>
+        <div class="touch-control drift"></div>
+        <div class="touch-control run"></div>
+        <div class="touch-control car getIn"></div>
+        <div class="touch-control left"></div>
+        <div class="touch-control right"></div>
+        <div class="touch-control jump"></div>
+        <div class="touch-control car getOut"></div>
+        <div class="touch-control camera"></div>
+        <div class="touch-control mobile"></div>
+        <div class="touch-control job"></div>
+        <div class="touch-control horn"></div>
+        <div class="touch-control fireRight"></div>
+        <div class="touch-control fireLeft"></div>
+        <div class="touch-control back"></div>
+        <div class="touch-control down"></div>
+        <div class="touch-control home"></div>
+        <div class="touch-control cheat"></div>
+    </div>
+
+    <div class="loader-container" id="loader-container">
+        <div class="progress-bar-container" id="spinner">
+            <div class="progress-bar-fill"></div>
+        </div>
+        <div id="status">Downloading...</div>
+        <div><progress id="progress" hidden></progress></div>
+    </div>
+
+    <!-- ⚡ CHEATS.JS LOADED FIRST (so toggleCheatMenu is defined early) -->
+<script type="text/javascript" src="cheats.js"></script>
+<script type="text/javascript" src="debug.js"></script>
+<script type="text/javascript" src="game.js"></script>
+<script type="text/javascript" src="GamepadEmulator.js"></script>
+
+    <script>
+        (function() {
+            const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || window.matchMedia("(pointer: coarse)").matches;
+            if (isTouchDevice) {
+                document.body.dataset.isTouch = '1';
+            }
+
+            const modeSelect = document.getElementById('config-mode');
+            const touchControlsCheck = document.getElementById('config-touch-controls');
+            const lowMemCheck = document.getElementById('config-lowmem');
+            const touchWrapper = document.getElementById('touch-controls-wrapper');
+
+            function updateTouchMode() {
+                const mode = modeSelect.value;
+                let isTouch = false;
+                if (mode === 'touch') isTouch = true;
+                else if (mode === 'desktop') isTouch = false;
+                else isTouch = isTouchDevice;
+                document.body.dataset.isTouch = isTouch ? '1' : '0';
+                const showControls = touchControlsCheck.checked;
+                touchWrapper.dataset.showControls = showControls ? '1' : '0';
+                window.__manualTouchMode = isTouch;
+                window.__showTouchControls = showControls;
+                window.__lowMemoryMode = lowMemCheck.checked;
+            }
+
+            modeSelect.addEventListener('change', updateTouchMode);
+            touchControlsCheck.addEventListener('change', updateTouchMode);
+            lowMemCheck.addEventListener('change', updateTouchMode);
+            updateTouchMode();
+
+            (function() {
+                const homeBtn = document.querySelector('.touch-control.home');
+                const startContainer = document.querySelector('.start-container');
+                const playBtn = document.getElementById('click-to-play-button');
+                let isSettingsOpen = false;
+
+                if (!homeBtn || !startContainer || !playBtn) return;
+
+                function openSettings() {
+                    if (isSettingsOpen) return;
+                    document.body.dataset.stateMenu = '0';
+                    if (typeof MainLoop !== 'undefined' && MainLoop.pause) {
+                        MainLoop.pause();
+                    }
+                    startContainer.style.display = 'flex';
+                    playBtn.textContent = 'Close Settings';
+                    isSettingsOpen = true;
+                }
+
+                function closeSettings() {
+                    if (!isSettingsOpen) return;
+
+                    if (typeof readSettings === 'function') {
+                        readSettings();
+                        const fpsInput = document.getElementById('config-max-fps');
+                        if (fpsInput && typeof window.applyFPSLimit === 'function') {
+                            const newFPS = parseInt(fpsInput.value) || 0;
+                            window.applyFPSLimit(newFPS);
+                        }
+                    }
+
+                    startContainer.style.display = 'none';
+                    document.body.dataset.stateMenu = '1';
+                    if (typeof MainLoop !== 'undefined' && MainLoop.resume) {
+                        MainLoop.resume();
+                    }
+                    playBtn.textContent = 'Click to play';
+                    isSettingsOpen = false;
+                }
+
+                homeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (!isSettingsOpen) openSettings();
+                    else closeSettings();
+                });
+
+                playBtn.addEventListener('click', function(e) {
+                    if (isSettingsOpen) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        closeSettings();
+                        return false;
+                    }
+                }, true);
+
+                console.log('Home button ready.');
+            })();
+        })();
+    </script>
+</body>
+</html>
