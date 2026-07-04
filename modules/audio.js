@@ -1,3 +1,8 @@
+// ============================================================
+// audio.js – Fixed: prevents crashes when calling _alSource*v
+//            with null pointer (added missing return statements)
+// ============================================================
+
 var AL = {
     QUEUE_INTERVAL: 25,
     QUEUE_LOOKAHEAD: .1,
@@ -2335,6 +2340,8 @@ var _alSource3i = (sourceId, param, value0, value1, value2) => {
             break
     }
 };
+
+// FIXED: added return after setting error
 var _alSourcePause = sourceId => {
     if (!AL.currentCtx) {
         return
@@ -2346,12 +2353,15 @@ var _alSourcePause = sourceId => {
     }
     AL.setSourceState(src, 4115)
 };
+
+// FIXED: added return after null pointer check
 var _alSourcePausev = (count, pSourceIds) => {
     if (!AL.currentCtx) {
         return
     }
     if (!pSourceIds) {
-        AL.currentCtx.err = 40963
+        AL.currentCtx.err = 40963;
+        return;   // <-- missing return added
     }
     for (var i = 0; i < count; ++i) {
         if (!AL.currentCtx.sources[HEAP32[pSourceIds + i * 4 >> 2]]) {
@@ -2364,6 +2374,7 @@ var _alSourcePausev = (count, pSourceIds) => {
         AL.setSourceState(AL.currentCtx.sources[srcId], 4115)
     }
 };
+
 var _alSourcePlay = sourceId => {
     if (!AL.currentCtx) {
         return
@@ -2375,12 +2386,15 @@ var _alSourcePlay = sourceId => {
     }
     AL.setSourceState(src, 4114)
 };
+
+// FIXED: added return after null pointer check
 var _alSourcePlayv = (count, pSourceIds) => {
     if (!AL.currentCtx) {
         return
     }
     if (!pSourceIds) {
-        AL.currentCtx.err = 40963
+        AL.currentCtx.err = 40963;
+        return;   // <-- missing return added
     }
     for (var i = 0; i < count; ++i) {
         if (!AL.currentCtx.sources[HEAP32[pSourceIds + i * 4 >> 2]]) {
@@ -2393,6 +2407,8 @@ var _alSourcePlayv = (count, pSourceIds) => {
         AL.setSourceState(AL.currentCtx.sources[srcId], 4114)
     }
 };
+
+// FIXED: added return after null pointer check
 var _alSourceQueueBuffers = (sourceId, count, pBufferIds) => {
     if (!AL.currentCtx) {
         return
@@ -2408,6 +2424,10 @@ var _alSourceQueueBuffers = (sourceId, count, pBufferIds) => {
     }
     if (count === 0) {
         return
+    }
+    if (!pBufferIds) {
+        AL.currentCtx.err = 40963;
+        return;   // <-- missing return added
     }
     var templateBuf = AL.buffers[0];
     for (var buf of src.bufQueue) {
@@ -2443,6 +2463,7 @@ var _alSourceQueueBuffers = (sourceId, count, pBufferIds) => {
     AL.initSourcePanner(src);
     AL.scheduleSourceAudio(src)
 };
+
 var _alSourceRewind = sourceId => {
     if (!AL.currentCtx) {
         return
@@ -2455,12 +2476,15 @@ var _alSourceRewind = sourceId => {
     AL.setSourceState(src, 4116);
     AL.setSourceState(src, 4113)
 };
+
+// FIXED: added return after null pointer check
 var _alSourceRewindv = (count, pSourceIds) => {
     if (!AL.currentCtx) {
         return
     }
     if (!pSourceIds) {
-        AL.currentCtx.err = 40963
+        AL.currentCtx.err = 40963;
+        return;   // <-- missing return added
     }
     for (var i = 0; i < count; ++i) {
         if (!AL.currentCtx.sources[HEAP32[pSourceIds + i * 4 >> 2]]) {
@@ -2473,6 +2497,7 @@ var _alSourceRewindv = (count, pSourceIds) => {
         AL.setSourceState(AL.currentCtx.sources[srcId], 4113)
     }
 };
+
 var _alSourceStop = sourceId => {
     if (!AL.currentCtx) {
         return
@@ -2484,12 +2509,15 @@ var _alSourceStop = sourceId => {
     }
     AL.setSourceState(src, 4116)
 };
+
+// FIXED: added return after null pointer check
 var _alSourceStopv = (count, pSourceIds) => {
     if (!AL.currentCtx) {
         return
     }
     if (!pSourceIds) {
-        AL.currentCtx.err = 40963
+        AL.currentCtx.err = 40963;
+        return;   // <-- missing return added
     }
     for (var i = 0; i < count; ++i) {
         if (!AL.currentCtx.sources[HEAP32[pSourceIds + i * 4 >> 2]]) {
@@ -2502,6 +2530,8 @@ var _alSourceStopv = (count, pSourceIds) => {
         AL.setSourceState(AL.currentCtx.sources[srcId], 4116)
     }
 };
+
+// FIXED: added return after null pointer check
 var _alSourceUnqueueBuffers = (sourceId, count, pBufferIds) => {
     if (!AL.currentCtx) {
         return
@@ -2518,6 +2548,10 @@ var _alSourceUnqueueBuffers = (sourceId, count, pBufferIds) => {
     if (count === 0) {
         return
     }
+    if (!pBufferIds) {
+        AL.currentCtx.err = 40963;
+        return;   // <-- missing return added
+    }
     for (var i = 0; i < count; i++) {
         var buf = src.bufQueue.shift();
         buf.refCount--;
@@ -2530,6 +2564,7 @@ var _alSourceUnqueueBuffers = (sourceId, count, pBufferIds) => {
     AL.initSourcePanner(src);
     AL.scheduleSourceAudio(src)
 };
+
 var _alSourcef = (sourceId, param, value) => {
     switch (param) {
         case 4097:

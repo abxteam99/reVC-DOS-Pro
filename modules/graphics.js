@@ -1,8 +1,3 @@
-// ============================================================
-// ORIGINAL FILE CONTENT (FPS limiter removed, swap restored)
-// + High Performance GPU mode, preserveDrawingBuffer false
-// ============================================================
-
 var EGL = {
     errorCode: 12288,
     defaultDisplayInitialized: false,
@@ -647,7 +642,7 @@ var _eglQueryString = (display, name) => {
     return ret
 };
 
-// Original swap buffers function
+// Original swap function (kept for reference, not used)
 function eglSwapBuffersOriginal(dpy, surface) {
     if (!EGL.defaultDisplayInitialized) {
         EGL.setErrorCode(12289)
@@ -662,8 +657,33 @@ function eglSwapBuffersOriginal(dpy, surface) {
     return 0
 }
 
-// Use the original swap (no FPS limiter)
-var _eglSwapBuffers = eglSwapBuffersOriginal;
+// FIXED: Real _eglSwapBuffers that presents frames and schedules the next animation frame
+var _eglSwapBuffers = (dpy, surface) => {
+    if (!EGL.defaultDisplayInitialized) {
+        EGL.setErrorCode(12289);
+        return 0;
+    }
+    if (!GLctx) {
+        EGL.setErrorCode(12290);
+        return 0;
+    }
+    if (GLctx.isContextLost()) {
+        EGL.setErrorCode(12302);
+        return 0;
+    }
+    // If the context is on an OffscreenCanvas, commit the rendering
+    if (GLctx.commit) {
+        GLctx.commit();
+    }
+    // Schedule the next animation frame via MainLoop (always available from runtime.js)
+    if (typeof MainLoop !== 'undefined' && MainLoop.requestAnimationFrame) {
+        MainLoop.requestAnimationFrame(() => {});
+    } else if (typeof requestAnimationFrame !== 'undefined') {
+        requestAnimationFrame(() => {});
+    }
+    EGL.setErrorCode(12288);
+    return 1;
+};
 
 var _eglSwapInterval = (display, interval) => {
     if (display != 62e3) {
@@ -2696,5 +2716,3 @@ var _emscripten_glWaitSync = (sync, flags, timeout) => {
     timeout = Number(timeout);
     GLctx.waitSync(GL.syncs[sync], flags, timeout)
 };
-
-// End of graphics.js
