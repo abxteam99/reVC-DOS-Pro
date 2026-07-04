@@ -1,12 +1,66 @@
 <!DOCTYPE html>
-<html lang="en-us">
+<html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no" />
-    <title>Grand Theft Auto: Vice City</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,viewport-fit=cover"/>
+    <title>Application Engine Portal</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* AirBreak overlay – hidden by default */
+        :root {
+            --neon-primary: #f31383;
+            --neon-secondary: #0df0ff;
+            --bg: #000000;
+            --panel: rgba(12, 6, 22, 0.82);
+            --border: rgba(243, 19, 131, 0.18);
+            --text: #e3ddf7;
+            --muted: #6c628a;
+            --btn-disabled: #1e1830;
+            --accent-gradient: linear-gradient(135deg, #f31383 0%, #c70e69 50%, #9b0f5b 100%);
+            --btn-radius: 10px;
+            --btn-transition: 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
+        }
+
+        @media(prefers-color-scheme:light) {
+            :root {
+                --bg: #ffffff;
+                --panel: rgba(238, 232, 247, 0.85);
+                --border: rgba(243, 19, 131, 0.22);
+                --text: #170f33;
+                --muted: #7c729c;
+                --btn-disabled: #d2cbdc;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            background: var(--bg);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: var(--text);
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: background-color 0.4s ease;
+        }
+
+        #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            display: block;
+        }
+
         #airbreak-overlay {
             position: fixed;
             bottom: 20px;
@@ -15,156 +69,405 @@
             display: none;
             touch-action: none;
         }
-        #airbreak-overlay.active { display: block; }
+        #airbreak-overlay.active {
+            display: block;
+        }
+
         .airbreak-joystick {
-            width: 120px;
-            height: 120px;
-            background: rgba(0, 255, 255, 0.2);
-            border: 2px solid #0ff;
+            width: 110px;
+            height: 110px;
+            background: rgba(13, 240, 255, 0.06);
+            border: 1px solid rgba(13, 240, 255, 0.35);
             border-radius: 50%;
             position: relative;
-            touch-action: none;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
         }
         .airbreak-joystick-knob {
-            width: 50px;
-            height: 50px;
-            background: rgba(0, 255, 255, 0.6);
-            border: 2px solid #0ff;
+            width: 40px;
+            height: 40px;
+            background: rgba(13, 240, 255, 0.25);
+            border: 1px solid var(--neon-secondary);
             border-radius: 50%;
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
+            transition: transform 0.05s ease;
+            box-shadow: 0 0 10px rgba(13, 240, 255, 0.2);
         }
+
         .airbreak-vertical-btns {
             position: fixed;
             bottom: 20px;
             right: 20px;
             display: none;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
             z-index: 100001;
         }
-        .airbreak-vertical-btns.active { display: flex; }
+        .airbreak-vertical-btns.active {
+            display: flex;
+        }
         .airbreak-v-btn {
-            width: 60px;
-            height: 60px;
-            background: rgba(0, 255, 255, 0.2);
-            border: 2px solid #0ff;
-            border-radius: 10px;
-            color: #0ff;
-            font-size: 24px;
+            width: 50px;
+            height: 50px;
+            background: rgba(13, 240, 255, 0.06);
+            border: 1px solid rgba(13, 240, 255, 0.35);
+            border-radius: 8px;
+            color: var(--neon-secondary);
+            font-size: 18px;
+            font-weight: 700;
             display: flex;
             align-items: center;
             justify-content: center;
             touch-action: manipulation;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            transition: all 0.15s ease;
         }
-        .airbreak-v-btn:active { background: rgba(0, 255, 255, 0.5); }
+        .airbreak-v-btn:active {
+            background: rgba(13, 240, 255, 0.2);
+            border-color: var(--neon-secondary);
+            transform: scale(0.95);
+        }
+
         #airbreak-toggle-fly {
             position: fixed;
-            bottom: 160px;
+            bottom: 142px;
             right: 20px;
-            width: 80px;
-            height: 40px;
-            background: rgba(255, 255, 0, 0.2);
-            border: 2px solid #ff0;
-            border-radius: 10px;
-            color: #ff0;
-            font-size: 12px;
-            font-weight: bold;
+            width: 72px;
+            height: 34px;
+            background: rgba(255, 234, 0, 0.06);
+            border: 1px solid rgba(255, 234, 0, 0.35);
+            border-radius: 6px;
+            color: #ffea00;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1px;
             z-index: 100001;
             display: none;
             align-items: center;
             justify-content: center;
             touch-action: manipulation;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            transition: all 0.15s ease;
         }
-        #airbreak-toggle-fly.active { background: rgba(255, 255, 0, 0.5); }
-        #airbreak-toggle-fly.visible { display: flex; }
+        #airbreak-toggle-fly.active {
+            background: rgba(255, 234, 0, 0.2);
+            border-color: #ffea00;
+        }
+        #airbreak-toggle-fly.visible {
+            display: flex;
+        }
 
-        /* File picker overlay */
         #file-loader-overlay {
             position: fixed;
             inset: 0;
             z-index: 999999;
-            background: rgba(0,0,0,0.9);
+            background: var(--bg);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            color: #fff;
-            font-family: sans-serif;
+            padding: 1.25rem;
+            transition: all 0.4s ease;
+        }
+
+        .loader-card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-top: 3px solid var(--neon-primary);
+            border-radius: 16px;
+            padding: 1.6rem 1.5rem 1.75rem;
+            width: 100%;
+            max-width: 460px;
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
             text-align: center;
-            padding: 20px;
+            animation: cardIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        #file-loader-overlay h2 {
-            margin-bottom: 10px;
-            color: #ff00ff;
+        @keyframes cardIn {
+            from { opacity: 0; transform: scale(0.96) translateY(8px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
         }
-        #file-loader-overlay input[type="file"] {
-            margin: 10px;
-            padding: 10px;
-            background: #333;
-            border: 2px solid #ff00ff;
-            border-radius: 8px;
-            color: #fff;
-            font-size: 16px;
-            width: 80%;
-            max-width: 400px;
+
+        .loader-card h2 {
+            font-size: 1.15rem;
+            font-weight: 900;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            color: var(--text);
+            margin-bottom: 1.3rem;
+            font-style: normal;
         }
-        #file-loader-overlay .status {
-            font-size: 14px;
-            min-height: 24px;
+
+        .file-inputs-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            width: 100%;
+            margin-bottom: 0.6rem;
         }
-        #file-loader-overlay .status.loaded { color: #0f0; }
-        #file-loader-overlay .status.error { color: #f44; }
-        #start-game-btn {
-            margin-top: 25px;
-            padding: 14px 50px;
-            background: #555;
-            border: none;
-            border-radius: 8px;
-            color: #fff;
-            font-weight: bold;
-            font-size: 20px;
+        .file-input-group {
+            width: 100%;
+            text-align: left;
+            margin-bottom: 0.5rem;
+        }
+        .file-input-group p {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 0.4rem;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            opacity: 0.85;
+        }
+
+        .file-input-ui {
+            width: 100%;
+            padding: 0.55rem 0.75rem;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1.5px solid rgba(255, 255, 255, 0.12);
+            border-radius: var(--btn-radius);
+            color: var(--text);
+            font-size: 0.76rem;
+            font-family: inherit;
+            font-weight: 500;
+            outline: none;
             cursor: pointer;
-            transition: background 0.3s;
+            transition: all var(--btn-transition);
+            letter-spacing: 0.2px;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+        @media(prefers-color-scheme:light) {
+            .file-input-ui {
+                background: rgba(255, 255, 255, 0.6);
+                border-color: rgba(0, 0, 0, 0.1);
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            }
+        }
+        .file-input-ui:hover {
+            border-color: rgba(13, 240, 255, 0.5);
+            box-shadow: 0 0 14px rgba(13, 240, 255, 0.12), 0 4px 12px rgba(0, 0, 0, 0.2);
+            background: rgba(0, 0, 0, 0.32);
+            transform: translateY(-1px);
+        }
+        @media(prefers-color-scheme:light) {
+            .file-input-ui:hover {
+                background: rgba(255, 255, 255, 0.75);
+                border-color: rgba(13, 180, 210, 0.55);
+                box-shadow: 0 0 14px rgba(13, 200, 240, 0.15), 0 4px 12px rgba(0, 0, 0, 0.08);
+            }
+        }
+        .file-input-ui:focus {
+            border-color: var(--neon-secondary);
+            box-shadow: 0 0 20px rgba(13, 240, 255, 0.22), 0 0 0 3px rgba(13, 240, 255, 0.06);
+            background: rgba(0, 0, 0, 0.35);
+        }
+        .file-input-ui::file-selector-button {
+            padding: 0.35rem 0.7rem;
+            margin-right: 0.6rem;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+        }
+        .file-input-ui::file-selector-button:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--neon-secondary);
+            box-shadow: 0 0 10px rgba(13, 240, 255, 0.2);
+        }
+
+        .status {
+            font-size: 0.66rem;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-top: 0.35rem;
+            min-height: 16px;
+            transition: color 0.3s ease;
+        }
+        .status.loaded {
+            color: #10b981;
+            text-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
+        }
+        .status.error {
+            color: #ef4444;
+            text-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+        }
+
+        #start-game-btn {
+            width: 100%;
+            max-width: 220px;
+            margin-top: 1.2rem;
+            padding: 0.7rem 1.6rem;
+            background: var(--btn-disabled);
+            border: 1.5px solid rgba(255, 255, 255, 0.06);
+            border-radius: var(--btn-radius);
+            color: var(--muted);
+            font-weight: 800;
+            font-size: 0.88rem;
+            letter-spacing: 1.8px;
+            text-transform: uppercase;
+            cursor: not-allowed;
+            transition: all var(--btn-transition);
+            outline: none;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        #start-game-btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, transparent 50%);
+            pointer-events: none;
+            border-radius: inherit;
         }
         #start-game-btn:enabled {
-            background: #ff00ff;
-            box-shadow: 0 0 20px #ff00ff88;
+            background: var(--accent-gradient);
+            color: #fff;
+            cursor: pointer;
+            border: 1.5px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 6px 24px rgba(243, 19, 131, 0.35), 0 0 0 1px rgba(243, 19, 131, 0.15) inset;
+            animation: btnGlowPulse 2.5s ease-in-out infinite;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+        @keyframes btnGlowPulse {
+            0%, 100% {
+                box-shadow: 0 6px 24px rgba(243, 19, 131, 0.35), 0 0 40px rgba(243, 19, 131, 0.08);
+            }
+            50% {
+                box-shadow: 0 8px 32px rgba(243, 19, 131, 0.5), 0 0 55px rgba(243, 19, 131, 0.18), 0 0 0 2px rgba(243, 19, 131, 0.2) inset;
+            }
         }
         #start-game-btn:enabled:hover {
-            background: #ff44ff;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(243, 19, 131, 0.5), 0 0 50px rgba(243, 19, 131, 0.2);
+            background: linear-gradient(135deg, #ff1a8c 0%, #d40f72 50%, #a81060 100%);
+            border-color: rgba(255, 255, 255, 0.35);
+            letter-spacing: 2.2px;
         }
+        #start-game-btn:enabled:active {
+            transform: translateY(2px);
+            box-shadow: 0 3px 10px rgba(243, 19, 131, 0.25), 0 0 20px rgba(243, 19, 131, 0.1);
+            transition: all 0.08s ease;
+            background: linear-gradient(135deg, #c70e69 0%, #9b0f5b 100%);
+        }
+        #start-game-btn:disabled::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg, transparent 60%, rgba(255, 255, 255, 0.04) 70%, transparent 80%);
+            animation: subtleShimmer 6s linear infinite;
+            pointer-events: none;
+            border-radius: inherit;
+        }
+        @keyframes subtleShimmer {
+            to { transform: rotate(360deg); }
+        }
+
         #progress-text {
-            margin-top: 15px;
-            color: #aaa;
-            font-size: 14px;
-            min-height: 24px;
+            margin-top: 0.9rem;
+            color: var(--muted);
+            font-size: 0.7rem;
+            font-weight: 600;
+            min-height: 16px;
+            letter-spacing: 0.4px;
+            transition: color 0.3s ease;
+        }
+
+        .loader-container {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            pointer-events: none;
+        }
+        .progress-bar-container {
+            width: 120px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            width: 30%;
+            height: 100%;
+            background: var(--neon-primary);
+            box-shadow: 0 0 6px var(--neon-primary);
+            border-radius: 2px;
+        }
+        #status {
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        @media(min-width:640px) or (orientation:landscape) {
+            .loader-card {
+                max-width: 580px;
+                padding: 1.6rem 1.8rem 1.75rem;
+            }
+            .file-inputs-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 1.2rem;
+            }
+            .file-input-group {
+                margin-bottom: 0;
+            }
+        }
+        @media(max-width:480px) {
+            .file-inputs-grid {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+            .loader-card {
+                padding: 1.2rem 1rem 1.4rem;
+                max-width: 95vw;
+            }
+            .loader-card h2 {
+                font-size: 1rem;
+                letter-spacing: 1.8px;
+            }
+            #start-game-btn {
+                max-width: 180px;
+                font-size: 0.8rem;
+                padding: 0.6rem 1.2rem;
+            }
+            .file-input-ui {
+                font-size: 0.72rem;
+                padding: 0.5rem 0.6rem;
+            }
         }
     </style>
 </head>
-<body
-    data-is-touch="0"
-    data-state-car="0"
-    data-state-car-gun="0"
-    data-state-gun="0"
-    data-state-bike="0"
-    data-state-menu="0"
-    data-state-cutscene="0"
-    data-state-mobring="0"
-    data-state-job="0"
-    data-state-disable-controls="0"
-    data-state-panzer="0"
-    data-state-car-with-weapon="0"
-    data-state-hunter="0"
-    data-state-scope-mode="0"
-    data-state-scope-gun="0"
->
+<body data-is-touch="0" data-state-car="0" data-state-car-gun="0" data-state-gun="0" data-state-bike="0" data-state-menu="0" data-state-cutscene="0" data-state-mobring="0" data-state-job="0" data-state-disable-controls="0" data-state-panzer="0" data-state-car-with-weapon="0" data-state-hunter="0" data-state-scope-mode="0" data-state-scope-gun="0">
     <div class="wasted-container" hidden></div>
     <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()"></canvas>
-
-    <!-- Original touch controls -->
     <div class="touch-controls-wrapper" id="touch-controls-wrapper">
         <div id="move"></div>
         <div id="look"></div>
@@ -190,44 +493,42 @@
         <div class="touch-control home"></div>
         <div class="touch-control cheat"></div>
     </div>
-
-    <!-- AirBreak overlay -->
     <div id="airbreak-overlay">
         <div class="airbreak-joystick" id="airbreak-joystick">
             <div class="airbreak-joystick-knob" id="airbreak-joystick-knob"></div>
         </div>
     </div>
     <div class="airbreak-vertical-btns" id="airbreak-vertical-btns">
-        <div class="airbreak-v-btn" id="airbreak-up-btn">↑</div>
-        <div class="airbreak-v-btn" id="airbreak-down-btn">↓</div>
+        <div class="airbreak-v-btn" id="airbreak-up-btn">▲</div>
+        <div class="airbreak-v-btn" id="airbreak-down-btn">▼</div>
     </div>
     <div id="airbreak-toggle-fly">FLY</div>
-
-    <!-- File picker overlay (OFFLINE LOADER) -->
     <div id="file-loader-overlay">
-        <h2>📂 Select Game Files</h2>
-        <p style="margin:5px 0;">1. Choose <strong>vc-sky-en-v6.data</strong></p>
-        <input type="file" id="data-file-input" accept=".data">
-        <div id="data-status" class="status">Not loaded</div>
-
-        <p style="margin:20px 0 5px;">2. Choose <strong>vc-sky-en-v6.wasm</strong></p>
-        <input type="file" id="wasm-file-input" accept=".wasm">
-        <div id="wasm-status" class="status">Not loaded</div>
-
-        <button id="start-game-btn" disabled>▶ START GAME</button>
-        <div id="progress-text">Please select both files above.</div>
+        <div class="loader-card">
+            <h2>System Assets</h2>
+            <div class="file-inputs-grid">
+                <div class="file-input-group">
+                    <p>1. Primary Archive Data</p>
+                    <input type="file" id="data-file-input" class="file-input-ui" accept=".data">
+                    <div id="data-status" class="status">Offline</div>
+                </div>
+                <div class="file-input-group">
+                    <p>2. Execution Core Binary</p>
+                    <input type="file" id="wasm-file-input" class="file-input-ui" accept=".wasm">
+                    <div id="wasm-status" class="status">Offline</div>
+                </div>
+            </div>
+            <button id="start-game-btn" disabled>Initialize</button>
+            <div id="progress-text">Provide system components to execute.</div>
+        </div>
     </div>
-
-    <!-- Loader (original) -->
     <div class="loader-container" id="loader-container">
         <div class="progress-bar-container" id="spinner">
             <div class="progress-bar-fill"></div>
         </div>
-        <div id="status">Downloading...</div>
+        <div id="status">Syncing...</div>
         <div><progress id="progress" hidden></progress></div>
     </div>
-
-    <!-- ===== SCRIPTS ===== -->
     <script>
         (function() {
             let settings = {};
@@ -236,7 +537,7 @@
                 if (saved) settings = JSON.parse(saved);
             } catch (e) {}
             const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0 ||
-                                  window.matchMedia('(pointer: coarse)').matches;
+                window.matchMedia('(pointer: coarse)').matches;
             let isTouch = isTouchDevice;
             if (settings.mode === 'touch') isTouch = true;
             else if (settings.mode === 'desktop') isTouch = false;
@@ -254,19 +555,16 @@
             console.log('🎮 Game page loaded with settings:', settings);
         })();
     </script>
-
     <script type="text/javascript" src="debug.js"></script>
     <script type="text/javascript" src="GamepadEmulator.js"></script>
-    <!-- game.js is now loaded below, but we include it after the API setup -->
     <script type="text/javascript" src="game.js"></script>
-
-    <!-- API and popup opener -->
     <script>
         (function() {
             window.__gameApi = {
                 typeCheat: function(code) {
                     if (typeof window.typeCheat === 'function') window.typeCheat(code);
-                    else { if (!window._cheatQueue) window._cheatQueue = []; window._cheatQueue.push(code); }
+                    else { if (!window._cheatQueue) window._cheatQueue = [];
+                        window._cheatQueue.push(code); }
                 },
                 addMoney: function() { if (typeof window.addMoney === 'function') window.addMoney(); },
                 getDebugLogs: function() {
@@ -301,7 +599,7 @@
                         if (enable) {
                             Browser.requestFullscreen();
                         } else {
-                            try { Browser.exitFullscreen(); } catch(e) {}
+                            try { Browser.exitFullscreen(); } catch (e) {}
                         }
                     }
                 },
@@ -314,7 +612,6 @@
                 },
                 cheatWindowClosed: function() { console.log('Cheat popup closed.'); }
             };
-
             window.openCheatPopup = function() {
                 if (window.cheatWindow && !window.cheatWindow.closed) {
                     window.cheatWindow.focus();
@@ -329,15 +626,11 @@
                 if (window.cheatWindow) window.cheatWindow.focus();
                 else window.open('cheats.html', '_blank');
             };
-
-            // Cheat button opens the cheat popup
             document.querySelector('.touch-control.cheat')?.addEventListener('click', window.openCheatPopup);
             document.querySelector('.touch-control.cheat')?.addEventListener('touchstart', function(e) {
                 e.preventDefault();
                 window.openCheatPopup();
             }, { passive: false });
-
-            // Home button redirects to the launcher page
             document.querySelector('.touch-control.home')?.addEventListener('click', function() {
                 window.location.href = 'index.html';
             });
@@ -345,8 +638,6 @@
                 e.preventDefault();
                 window.location.href = 'index.html';
             }, { passive: false });
-
-            // Ensure canvas touch events after load
             window.addEventListener('load', function() {
                 const canvas = document.getElementById('canvas');
                 if (canvas) {
@@ -355,12 +646,9 @@
                     console.log('[Game] Canvas touch settings applied on load.');
                 }
             });
-
             console.log('🛠️ Game API exposed.');
         })();
-        
     </script>
-
     <script>
         document.addEventListener('keydown', function(e) {
             if (e.key === 'F3') {

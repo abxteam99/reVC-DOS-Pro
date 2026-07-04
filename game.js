@@ -170,7 +170,7 @@ function waitForFileSelection() {
         function checkReady() {
             if (dataLoaded && wasmLoaded) {
                 startBtn.disabled = false;
-                startBtn.textContent = '▶ START GAME';
+                startBtn.textContent = 'START GAME';
                 progressText.textContent = '✅ Both files ready! Click START.';
             }
         }
