@@ -2,239 +2,361 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GTA:VC Cheat Engine</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+    <title>Cheat Engine</title>
     <style>
-        * { box-sizing: border-box; }
+        :root {
+            --bg-dark: #07070d;
+            --bg-panel: #111122;
+            --bg-input: #1a1a30;
+            --color-text: #e2e8f0;
+            --color-muted: #8a99ad;
+            --accent-pink: #ff00ff;
+            --accent-cyan: #00ffff;
+            --accent-gold: #ffd700;
+            --accent-danger: #ff4444;
+            --border-color: #2a2a44;
+            --border-hover: #ff00ff88;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
             padding: 0;
-            background: #0a0a12;
-            color: #e0e0e0;
-            font-family: system-ui, sans-serif;
+            background: var(--bg-dark);
+            color: var(--color-text);
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             height: 100vh;
             overflow: hidden;
             display: flex;
             flex-direction: column;
         }
+
         #cheat-engine-ui {
             display: flex;
             flex-direction: column;
             height: 100vh;
             width: 100%;
-            background: #0a0a12;
+            background: var(--bg-dark);
         }
+
         h1 {
-            font-size: 16px;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: .05em;
+            text-transform: uppercase;
             margin: 0;
-            padding: 12px 16px;
-            background: #1a1a2e;
-            border-bottom: 1px solid #333;
+            padding: 14px 16px;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-shrink: 0;
         }
+
         h1 button {
             background: none;
             border: none;
-            color: #f44;
-            font-size: 20px;
+            color: var(--accent-danger);
+            font-size: 18px;
             cursor: pointer;
             touch-action: manipulation;
+            transition: transform .2s, opacity .2s;
         }
+
+        h1 button:hover {
+            transform: scale(1.1);
+            opacity: .8;
+        }
+
         .ce-tabs {
             display: flex;
-            border-bottom: 1px solid #333;
-            background: #111;
+            border-bottom: 1px solid var(--border-color);
+            background: #0d0d18;
             flex-shrink: 0;
         }
+
         .ce-tabs button {
             flex: 1;
             background: none;
             border: none;
-            color: #888;
-            padding: 10px;
-            font-size: 13px;
+            color: var(--color-muted);
+            padding: 12px 8px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .03em;
             cursor: pointer;
             border-bottom: 2px solid transparent;
             touch-action: manipulation;
+            transition: all .2s ease;
         }
+
         .ce-tabs button.active {
             color: #fff;
-            border-bottom-color: #ff00ff;
-            background: #1a1a2e;
+            border-bottom-color: var(--accent-pink);
+            background: var(--bg-panel);
+            text-shadow: 0 0 8px var(--accent-pink);
         }
+
         .ce-tab-content {
             display: none;
-            padding: 10px 16px;
+            padding: 14px 16px;
             flex: 1;
             overflow-y: auto;
         }
-        .ce-tab-content.active { display: block; }
+
+        .ce-tab-content.active {
+            display: block;
+        }
+
         .ce-input-row {
             display: flex;
-            gap: 6px;
-            margin-bottom: 8px;
+            gap: 8px;
+            margin-bottom: 10px;
+            align-items: center;
         }
-        .ce-input-row input, .ce-input-row select {
-            background: #1a1a2e;
-            border: 1px solid #444;
+
+        .ce-input-row input,
+        .ce-input-row select {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
             color: #fff;
-            padding: 8px;
+            padding: 10px;
             font-size: 13px;
-            border-radius: 4px;
+            border-radius: 6px;
             flex: 1;
+            outline: none;
+            transition: border-color .2s;
         }
+
+        .ce-input-row input:focus,
+        .ce-input-row select:focus {
+            border-color: var(--accent-cyan);
+        }
+
         .ce-btn-row {
             display: grid;
-            grid-template-columns: repeat(3,1fr);
-            gap: 4px;
-            margin-bottom: 8px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-bottom: 10px;
         }
-        .ce-btn-row button, .cheat-grid button {
-            background: #1a1a2e;
-            border: 1px solid #444;
-            color: #ccc;
-            padding: 8px;
+
+        .ce-btn-row button,
+        .cheat-grid button {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: #cbd5e1;
+            padding: 10px 6px;
             font-size: 12px;
-            border-radius: 4px;
+            font-weight: 500;
+            border-radius: 6px;
             cursor: pointer;
             touch-action: manipulation;
+            transition: all .15s ease;
         }
-        .cheat-grid button:hover, .ce-btn-row button:hover {
-            background: #ff00ff22;
-            border-color: #ff00ff;
+
+        .ce-btn-row button:hover,
+        .cheat-grid button:hover {
+            background: rgba(255, 0, 255, .08);
+            border-color: var(--border-hover);
             color: #fff;
+            box-shadow: 0 0 10px rgba(255, 0, 255, .15);
         }
+
         .results {
             max-height: 150px;
             overflow-y: auto;
-            background: #0a0a12;
-            border: 1px solid #333;
-            margin-top: 8px;
+            background: #05050a;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            margin-top: 10px;
             font-size: 11px;
         }
+
         .log-container {
-            background: #0a0a12;
-            border: 1px solid #333;
-            padding: 8px;
+            background: #05050a;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px;
             max-height: 150px;
             overflow-y: auto;
-            font-family: monospace;
+            font-family: 'Courier New', Courier, monospace;
             font-size: 11px;
             white-space: pre-wrap;
             word-break: break-all;
             user-select: text;
-            margin-top: 4px;
+            margin-top: 6px;
         }
-        #cheat-debug-log { color: #0f0; }
-        #cheat-error-log { color: #f44; }
+
+        #cheat-debug-log {
+            color: #10b981;
+        }
+
+        #cheat-error-log {
+            color: var(--accent-danger);
+        }
+
         .ce-status {
             font-size: 11px;
-            color: #888;
-            margin-top: 4px;
+            color: var(--color-muted);
+            margin-top: 6px;
+            letter-spacing: .02em;
         }
+
         .switch-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid #222;
+            padding: 10px 0;
+            border-bottom: 1px solid #1a1a2e;
         }
-        .switch-row label { font-size: 13px; }
+
+        .switch-row label {
+            font-size: 13px;
+        }
+
         .switch {
             position: relative;
             display: inline-block;
-            width: 36px;
-            height: 20px;
+            width: 40px;
+            height: 22px;
         }
-        .switch input { opacity:0; width:0; height:0; }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
         .slider {
             position: absolute;
             cursor: pointer;
-            top:0; left:0; right:0; bottom:0;
-            background-color: #333;
-            transition: .3s;
-            border-radius: 20px;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #2a2a40;
+            transition: .2s;
+            border-radius: 22px;
         }
+
         .slider:before {
             position: absolute;
             content: "";
-            height: 14px;
-            width: 14px;
+            height: 16px;
+            width: 16px;
             left: 3px;
             bottom: 3px;
-            background-color: white;
-            transition: .3s;
+            background-color: #fff;
+            transition: .2s;
             border-radius: 50%;
         }
-        input:checked + .slider { background-color: #ff00ff; }
-        input:checked + .slider:before { transform: translateX(16px); }
+
+        input:checked+.slider {
+            background-color: var(--accent-pink);
+            box-shadow: 0 0 8px rgba(255, 0, 255, .4);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(18px);
+        }
+
         .money-btn {
-            background: #ffd70022 !important;
-            border: 1px solid #ffd700 !important;
-            color: #ffd700 !important;
-            font-weight: bold;
+            background: rgba(255, 215, 0, .08) !important;
+            border: 1px solid var(--accent-gold) !important;
+            color: var(--accent-gold) !important;
+            font-weight: 700 !important;
             width: 100%;
-            margin: 8px 0;
-        }
-        .money-btn:active { background: #ffd70044 !important; }
-        .cheat-cat {
-            font-size: 12px;
-            color: #0ff;
-            margin: 10px 0 4px 0;
+            margin: 12px 0 6px 0;
             text-transform: uppercase;
+            letter-spacing: .05em;
         }
+
+        .money-btn:hover {
+            background: rgba(255, 215, 0, .18) !important;
+            box-shadow: 0 0 10px rgba(255, 215, 0, .2) !important;
+        }
+
+        .cheat-cat {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            margin: 16px 0 6px 0;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            text-shadow: 0 0 6px rgba(0, 255, 255, .2);
+        }
+
         .cheat-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 4px;
+            gap: 6px;
         }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: #333; }
+
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #2a2a44;
+            border-radius: 10px;
+        }
+
         .log-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-top: 6px;
+            margin-top: 8px;
         }
+
         .log-header label {
             font-size: 12px;
-            color: #888;
+            color: var(--color-muted);
         }
+
         .copy-btn {
-            background: #1a1a2e;
-            border: 1px solid #444;
-            color: #ccc;
-            padding: 2px 8px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: var(--color-text);
+            padding: 4px 10px;
             border-radius: 4px;
             cursor: pointer;
             font-size: 11px;
             margin-left: 8px;
             touch-action: manipulation;
+            transition: all .2s;
         }
+
         .copy-btn:hover {
-            background: #ff00ff22;
-            border-color: #ff00ff;
-            color: #fff;
+            background: rgba(255, 0, 255, .08);
+            border-color: var(--accent-pink);
         }
+
         .error-box {
             display: none;
             padding: 20px;
             text-align: center;
-            color: #f44;
+            color: var(--accent-danger);
         }
-        .error-box.visible { display: block; }
-        .ui-disabled { opacity: 0.4; pointer-events: none; }
+
+        .error-box.visible {
+            display: block;
+        }
+
+        .ui-disabled {
+            opacity: .35;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
     <div id="cheat-engine-ui">
-        <h1>
-            Cheat Engine
-            <button id="cheat-close-btn">✕</button>
-        </h1>
+        <h1>Cheat Engine <button id="cheat-close-btn">✕</button></h1>
         <div class="ce-tabs">
             <button class="active" data-tab="scanner">Scanner</button>
             <button data-tab="cheats">Cheats</button>
@@ -242,10 +364,9 @@
             <button data-tab="debugger">Debugger</button>
         </div>
 
-        <!-- Scanner Tab -->
         <div id="tab-scanner" class="ce-tab-content active">
             <div class="ce-input-row">
-                <input type="text" id="ce-value" placeholder="Value" />
+                <input type="text" id="ce-value" placeholder="Value">
                 <select id="ce-type">
                     <option value="any">Any</option>
                     <option value="i32">i32</option>
@@ -265,14 +386,13 @@
             </div>
             <div class="ce-status" id="ce-status">Ready</div>
             <div class="results" id="ce-results"></div>
-            <div class="ce-input-row" style="margin-top:8px;">
-                <input type="text" id="ce-manual-addr" placeholder="0xAddress" />
+            <div class="ce-input-row" style="margin-top:10px">
+                <input type="text" id="ce-manual-addr" placeholder="0xAddress">
                 <button id="ce-view-addr">View</button>
             </div>
-            <div id="ce-manual-results" style="display:none;"></div>
+            <div id="ce-manual-results" style="display:none"></div>
         </div>
 
-        <!-- Cheats Tab -->
         <div id="tab-cheats" class="ce-tab-content">
             <div class="cheat-cat">Weapons & Health</div>
             <div class="cheat-grid">
@@ -351,7 +471,6 @@
             </div>
         </div>
 
-        <!-- Quick Tab -->
         <div id="tab-quick" class="ce-tab-content">
             <div class="switch-row">
                 <label>Fullscreen</label>
@@ -374,7 +493,6 @@
             <div style="font-size:10px; color:#666;" id="ce-pos-display"></div>
         </div>
 
-        <!-- Debugger Tab -->
         <div id="tab-debugger" class="ce-tab-content">
             <div class="log-header">
                 <label>Network Debug Logs</label>
@@ -389,7 +507,6 @@
             <button id="clear-debug-log-btn" style="margin-top:8px; background:#1a1a2e; border:1px solid #444; color:#ccc; padding:4px 8px; border-radius:4px; cursor:pointer; width:100%;">Clear Logs</button>
         </div>
 
-        <!-- Error Box -->
         <div class="error-box" id="error-box">
             <h2>Game not found</h2>
             <p>Please open this page from the game (via the cheat button).</p>
@@ -399,7 +516,6 @@
 
     <script>
         (function() {
-            // Check if game exists and has API
             const gameOpener = window.opener;
             let gameApi = null;
             let gameAvailable = false;
@@ -412,10 +528,9 @@
                 document.querySelector('#cheat-engine-ui').classList.add('ui-disabled');
                 console.warn('Cheat page: No game window found.');
                 document.getElementById('cheat-close-btn').addEventListener('click', () => window.close());
-                return; // stop all further execution
+                return;
             }
 
-            // Helper to safely call game API
             function callGameApi(method, ...args) {
                 if (!gameAvailable || !gameApi || typeof gameApi[method] !== 'function') {
                     console.warn('Game API not available for:', method);
@@ -423,19 +538,26 @@
                 }
                 try {
                     return gameApi[method](...args);
-                } catch(e) {
+                } catch (e) {
                     console.error('Error calling gameApi.' + method, e);
                     return null;
                 }
             }
 
-            // ---- UI elements ----
             const statusEl = document.getElementById('ce-status');
             function updateStatus(text) { statusEl.textContent = text; }
 
-            // ---- Scanner ----
             let results = [];
             let isSearching = false;
+
+            function ensureLastVal(resultObj) {
+                if (resultObj && resultObj.addr !== undefined) {
+                    if (resultObj.lastVal === undefined) {
+                        resultObj.lastVal = resultObj.val !== undefined ? resultObj.val : callGameApi('readMemory', resultObj.addr, resultObj.type);
+                    }
+                }
+                return resultObj;
+            }
 
             function firstSearch() {
                 if (isSearching) return;
@@ -446,9 +568,10 @@
                 isSearching = true;
                 updateStatus("Searching...");
                 try {
-                    results = callGameApi('scanMemory', val, type) || [];
+                    const raw = callGameApi('scanMemory', val, type) || [];
+                    results = raw.map(r => ensureLastVal(r));
                     updateStatus(`Found ${results.length} addresses`);
-                } catch(e) { updateStatus("Error: " + e.message); }
+                } catch (e) { updateStatus("Error: " + e.message); }
                 isSearching = false;
                 displayResults();
             }
@@ -467,9 +590,9 @@
                     const allResults = callGameApi('scanMemory', val, 'any') || [];
                     const addrSet = new Set(results.map(r => r.addr));
                     const filtered = allResults.filter(r => addrSet.has(r.addr));
-                    results = filtered;
+                    results = filtered.map(r => ensureLastVal(r));
                     updateStatus(`Found ${results.length} addresses (filtered)`);
-                } catch(e) { updateStatus("Error: " + e.message); }
+                } catch (e) { updateStatus("Error: " + e.message); }
                 isSearching = false;
                 displayResults();
             }
@@ -483,10 +606,10 @@
                     const fresh = callGameApi('scanMemory', val, 'any') || [];
                     const addrSet = new Set(results.map(r => r.addr));
                     const filtered = fresh.filter(r => addrSet.has(r.addr));
-                    results = filtered;
+                    results = filtered.map(r => ensureLastVal(r));
                     updateStatus(`Snapshot: ${results.length} values captured`);
                     displayResults();
-                } catch(e) { updateStatus("Error: " + e.message); }
+                } catch (e) { updateStatus("Error: " + e.message); }
             }
 
             function filterResults(mode) {
@@ -505,12 +628,15 @@
                         if (mode === 'inc' && currentVal > res.lastVal) match = true;
                         if (mode === 'dec' && currentVal < res.lastVal) match = true;
                         if (mode === 'changed' && Math.abs(currentVal - res.lastVal) > 0.0001) match = true;
-                        if (match) { res.lastVal = currentVal; updated.push(res); }
+                        if (match) {
+                            res.lastVal = currentVal;
+                            updated.push(res);
+                        }
                     }
                     results = updated;
                     updateStatus(`Found ${results.length} addresses (compared to snapshot)`);
                     displayResults();
-                } catch(e) { updateStatus("Error: " + e.message); }
+                } catch (e) { updateStatus("Error: " + e.message); }
                 isSearching = false;
             }
 
@@ -526,7 +652,7 @@
                     div.style.marginBottom = '2px';
                     div.style.borderBottom = '1px solid #333';
                     let currentVal = '???';
-                    try { currentVal = callGameApi('readMemory', res.addr, res.type); } catch(e) {}
+                    try { currentVal = callGameApi('readMemory', res.addr, res.type); } catch (e) {}
                     div.innerHTML = `
                         <span style="color: #ff00ff;">0x${res.addr.toString(16)}</span>
                         <span style="color: #0ff;">${currentVal}</span>
@@ -545,7 +671,7 @@
                     callGameApi('writeMemory', addr, type, num);
                     updateStatus(`Value at 0x${addr.toString(16)} updated`);
                     displayResults();
-                } catch(e) { alert('Error writing to memory: ' + e.message); }
+                } catch (e) { alert('Error writing to memory: ' + e.message); }
             };
 
             function viewManualAddr() {
@@ -558,7 +684,7 @@
                 const types = ['i8', 'i16', 'i32', 'f32', 'f64'];
                 types.forEach(type => {
                     let val = '???';
-                    try { val = callGameApi('readMemory', addr, type); } catch(e) {}
+                    try { val = callGameApi('readMemory', addr, type); } catch (e) {}
                     const div = document.createElement('div');
                     div.style.display = 'flex';
                     div.style.justifyContent = 'space-between';
@@ -572,7 +698,6 @@
                 });
             }
 
-            // ---- Cheat buttons ----
             document.querySelectorAll('.cheat-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const code = this.dataset.cheat;
@@ -583,37 +708,31 @@
                 });
             });
 
-            // ---- Quick tab controls ----
             document.getElementById('ce-toggle-fullscreen').addEventListener('change', function(e) {
                 callGameApi('toggleFullscreen', e.target.checked);
             });
-
             document.getElementById('ce-toggle-airbreak').addEventListener('change', function(e) {
                 callGameApi('toggleAirBrake', e.target.checked);
             });
-
             document.getElementById('ce-toggle-godmode').addEventListener('change', function(e) {
                 callGameApi('toggleGodMode', e.target.checked);
             });
-
             document.getElementById('ce-add-money').addEventListener('click', function() {
                 callGameApi('addMoney');
                 updateStatus('+$9999999 added!');
             });
-
             document.getElementById('ce-fly-speed').addEventListener('change', function() {
                 const speed = parseFloat(this.value) || 2.0;
                 callGameApi('setFlySpeed', speed);
                 updateStatus(`Fly speed set to ${speed}`);
             });
 
-            // ---- Debugger ----
             function updateNetworkLogs() {
                 const logDiv = document.getElementById('cheat-debug-log');
                 try {
                     const lines = callGameApi('getDebugLogs');
                     if (lines) logDiv.textContent = lines.join('\n');
-                } catch(e) {}
+                } catch (e) {}
             }
 
             function updateErrorLogs() {
@@ -621,28 +740,39 @@
                 try {
                     const lines = callGameApi('getErrorLogs');
                     if (lines) logDiv.textContent = lines.join('\n');
-                } catch(e) {}
+                } catch (e) {}
             }
 
             document.getElementById('copy-network-logs').addEventListener('click', function() {
                 const text = document.getElementById('cheat-debug-log').textContent;
-                if (navigator.clipboard) navigator.clipboard.writeText(text).catch(() => {});
-                else {
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(text).catch(() => {});
+                } else {
                     const ta = document.createElement('textarea');
-                    ta.value = text; ta.style.position='fixed'; ta.style.left='-9999px';
-                    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+                    ta.value = text;
+                    ta.style.position = 'fixed';
+                    ta.style.left = '-9999px';
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
                 }
             });
             document.getElementById('copy-error-logs').addEventListener('click', function() {
                 const text = document.getElementById('cheat-error-log').textContent;
-                if (navigator.clipboard) navigator.clipboard.writeText(text).catch(() => {});
-                else {
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(text).catch(() => {});
+                } else {
                     const ta = document.createElement('textarea');
-                    ta.value = text; ta.style.position='fixed'; ta.style.left='-9999px';
-                    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+                    ta.value = text;
+                    ta.style.position = 'fixed';
+                    ta.style.left = '-9999px';
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
                 }
             });
-
             document.getElementById('clear-debug-log-btn').addEventListener('click', function() {
                 document.getElementById('cheat-debug-log').textContent = '';
                 document.getElementById('cheat-error-log').textContent = '';
@@ -650,7 +780,6 @@
                 updateStatus('Logs cleared');
             });
 
-            // ---- Polling for logs ----
             let logInterval = null;
             function startLogPolling() {
                 if (logInterval) clearInterval(logInterval);
@@ -666,7 +795,6 @@
             }
             startLogPolling();
 
-            // ---- Tab switching ----
             document.querySelectorAll('.ce-tabs button').forEach(btn => {
                 btn.addEventListener('click', function() {
                     document.querySelectorAll('.ce-tabs button').forEach(b => b.classList.remove('active'));
@@ -682,7 +810,6 @@
                 });
             });
 
-            // ---- Scanner event bindings ----
             document.getElementById('ce-search').addEventListener('click', firstSearch);
             document.getElementById('ce-next').addEventListener('click', nextSearch);
             document.getElementById('ce-snap').addEventListener('click', snapshotValues);
@@ -695,13 +822,8 @@
                 updateStatus('Reset');
             });
             document.getElementById('ce-view-addr').addEventListener('click', viewManualAddr);
+            document.getElementById('cheat-close-btn').addEventListener('click', () => window.close());
 
-            // ---- Close button ----
-            document.getElementById('cheat-close-btn').addEventListener('click', function() {
-                window.close();
-            });
-
-            // ---- Initial status ----
             updateStatus('Ready. Connected to game.');
             console.log('🔧 Cheat Engine UI loaded (standalone).');
         })();
