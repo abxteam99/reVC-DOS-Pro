@@ -246,13 +246,13 @@ html, body {
 
 /* ----- INDIVIDUAL BUTTON BASE SIZES & POSITIONS (gameplay) ----- */
 .touch-control.menu {
-    background-image: url('/touch-icons/menu.svg');
+    background-image: url('touch-icons/menu.svg');
     width: 10vw; height: 10vw;
     top: 5vh; left: 2vw;
 }
 
 .touch-control.run {
-    background-image: url('/touch-icons/run.svg');
+    background-image: url('touch-icons/run.svg');
     width: 13vw;
     height: 13vw;
     bottom: 2vh;
@@ -260,7 +260,7 @@ html, body {
 }
 
 .touch-control.jump {
-    background-image: url('/touch-icons/jump.svg');
+    background-image: url('touch-icons/jump.svg');
     width: 12vw;
     height: 12vw;
     bottom: 2vh;
@@ -268,13 +268,13 @@ html, body {
 }
 
 .touch-control.car.getIn {
-    background-image: url('/touch-icons/car-getin.svg');
+    background-image: url('touch-icons/car-getin.svg');
     width: 12vw; height: 12vw;
     bottom: 33vh; right: 2vw;
 }
 .touch-control.drift,
 .touch-control.fist {
-    background-image: url('/touch-icons/drift.svg');
+    background-image: url('touch-icons/drift.svg');
     width: 12vw; height: 12vw;
     bottom: 33vh; right: 18vw;
 }
@@ -298,14 +298,14 @@ html, body {
     bottom: 58vh; right: 4vw;
 }
 .touch-control.fireRight {
-    background-image: url('/touch-icons/fireright.svg');
+    background-image: url('touch-icons/fireright.svg');
     width: 10vw; height: 10vw;
     bottom: 12vh;
     left: 41vw;
     display: none;
 }
 .touch-control.fireLeft {
-    background-image: url('/touch-icons/fireleft.svg');
+    background-image: url('touch-icons/fireleft.svg');
     width: 10vw; height: 10vw;
     bottom: 12vh;
     left: 28vw;
@@ -328,7 +328,7 @@ html, body {
 /* ----- HOME BUTTON – hidden by default, shown only in menu ----- */
 .touch-control.home {
     display: none;
-    background-image: url('/touch-icons/home.svg');
+    background-image: url('touch-icons/home.svg');
     width: 14vw;
     height: 14vw;
     bottom: 8vh;
@@ -341,7 +341,7 @@ html, body {
 
 /* ----- DEBUG BUTTON – centre safe gap, always visible in touch mode ----- */
 .touch-control.cheat {
-    background-image: url('/touch-icons/cheat.svg');
+    background-image: url('touch-icons/cheat.svg');
     width: 10vw;
     height: 10vw;
     top: 10vh;
@@ -363,22 +363,22 @@ html, body {
 
 /* ----- STATE-BASED OVERRIDES (gameplay) ----- */
 [data-state-car="1"] .touch-control.jump {
-    background-image: url('/touch-icons/break-car.svg');
+    background-image: url('touch-icons/break-car.svg');
 }
 [data-state-car="1"] .touch-control.run {
-    background-image: url('/touch-icons/run-car.svg');
+    background-image: url('touch-icons/run-car.svg');
 }
 [data-state-car="1"] .touch-control.camera {
-    background-image: url('/touch-icons/camera-car.svg');
+    background-image: url('touch-icons/camera-car.svg');
 }
 [data-state-job="1"] .touch-control.job {
-    background-image: url('/touch-icons/job.svg');
+    background-image: url('touch-icons/job.svg');
 }
 [data-state-car="1"] .touch-control.horn {
-    background-image: url('/touch-icons/horn-car.svg');
+    background-image: url('touch-icons/horn-car.svg');
 }
 [data-state-mobring="1"] .touch-control.mobile {
-    background-image: url('/touch-icons/mobile-mobring.svg');
+    background-image: url('touch-icons/mobile-mobring.svg');
 }
 [data-state-car="1"][data-state-car-gun="1"] .touch-control.fireRight,
 [data-state-car="1"][data-state-car-gun="1"] .touch-control.fireLeft {
@@ -391,13 +391,13 @@ html, body {
     right: auto;
     left: 9vw;
     top: 10vh;
-    background-image: url('/touch-icons/drift-gun.svg');
+    background-image: url('touch-icons/drift-gun.svg');
 }
 [data-state-menu="1"] .touch-control.run {
-    background-image: url('/touch-icons/enter.svg');
+    background-image: url('touch-icons/enter.svg');
 }
 [data-state-cutscene="1"] .touch-control.run {
-    background-image: url('/touch-icons/enter.svg');
+    background-image: url('touch-icons/enter.svg');
     bottom: auto;
     top: 12vh;
 }
@@ -409,7 +409,7 @@ html, body {
 }
 [data-state-cutscene="1"] .touch-control.car.getIn {
     display: block;
-    background-image: url('/touch-icons/car-getin-cutscene.svg');
+    background-image: url('touch-icons/car-getin-cutscene.svg');
     right: auto;
     left: 3vw;
     top: 10vh;
@@ -417,7 +417,7 @@ html, body {
 }
 [data-state-cutscene="0"] .touch-control.drift {
     display: block;
-    background-image: url('/touch-icons/drift-cutscene.svg');
+    background-image: url('touch-icons/drift-cutscene.svg');
 }
 [data-state-gun="1"][data-state-cutscene="1"] .touch-control.drift,
 [data-state-gun="1"][data-state-menu="1"] .touch-control.drift,
@@ -437,23 +437,23 @@ html, body {
 [data-state-car="1"][data-state-hunter="1"] .touch-control.fist {
     display: block;
     right: 24vw;
-    background-image: url('/touch-icons/fist-car-gun.svg');
+    background-image: url('touch-icons/fist-car-gun.svg');
 }
 [data-state-car="1"][data-state-hunter="1"] .touch-control.fist {
     right: 3vw;
-    background-image: url('/touch-icons/fist-hunter.svg');
+    background-image: url('touch-icons/fist-hunter.svg');
 }
 [data-state-car="1"][data-state-hunter="1"] .touch-control.drift {
     right: 24vw;
-    background-image: url('/touch-icons/drift-hunter.svg');
+    background-image: url('touch-icons/drift-hunter.svg');
 }
 
 /* ----- Override for car getin in bike state ----- */
 [data-state-car="1"][data-state-bike="1"] .touch-control.car.getIn {
-    background-image: url('/touch-icons/getin-bike.svg');
+    background-image: url('touch-icons/getin-bike.svg');
 }
 [data-state-car="1"] .touch-control.car.getIn {
-    background-image: url('/touch-icons/car-getout.svg');
+    background-image: url('touch-icons/car-getout.svg');
 }
 
 /* ─── MENU STATE: ONLY Run (Confirm), Back, and Home ─── */
@@ -464,7 +464,7 @@ html, body {
 /* Run (Confirm) – bottom-right */
 [data-state-menu="1"] .touch-control.run {
     display: block !important;
-    background-image: url('/touch-icons/enter.svg');
+    background-image: url('touch-icons/enter.svg');
     width: 16vw;
     height: 16vw;
     bottom: 8vh;
@@ -474,7 +474,7 @@ html, body {
 /* Back – bottom-left */
 [data-state-menu="1"] .touch-control.back {
     display: block !important;
-    background-image: url('/touch-icons/back.svg');
+    background-image: url('touch-icons/back.svg');
     width: 16vw;
     height: 16vw;
     bottom: 8vh;
@@ -484,7 +484,7 @@ html, body {
 /* Home – bottom-middle */
 [data-state-menu="1"] .touch-control.home {
     display: block !important;
-    background-image: url('/touch-icons/home.svg');
+    background-image: url('touch-icons/home.svg');
     width: 14vw;
     height: 14vw;
     bottom: 8vh;
@@ -528,7 +528,7 @@ html, body {
 /* ─── DOWN BUTTON (menu navigation) ─── */
 .touch-control.down {
     display: none;
-    background-image: url('/touch-icons/down.svg');
+    background-image: url('touch-icons/down.svg');
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;

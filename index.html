@@ -3,206 +3,185 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no" />
-    <title>Grand Theft Auto: Vice City</title>
-    <link rel="stylesheet" href="style.css">
+    <title>GTA: Vice City – Launcher</title>
+    <style>
+        * { box-sizing: border-box; }
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            background-color: #100a36;
+            background-image: linear-gradient(to bottom, #120731, #17022b);
+            background-attachment: fixed;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #8975c3;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .start-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 600px;
+            padding: 1.5em;
+            gap: 1.5em;
+        }
+        .title {
+            font-size: clamp(1.8rem, 6vw, 3.5rem);
+            font-weight: bold;
+            text-shadow: 0 0 20px #ff4193aa;
+            color: #fff;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+        .title span { color: #ff4193; }
+        .config-panel {
+            width: 100%;
+            padding: 1.5em;
+            border: 2px solid #2a1759;
+            border-radius: 1em;
+            backdrop-filter: blur(20px);
+            background: rgba(16,10,54,0.7);
+            color: #fff;
+            text-align: left;
+        }
+        .config-panel .config-option {
+            margin: 0.7em 0;
+        }
+        .config-panel label {
+            display: flex;
+            align-items: center;
+            gap: 0.5em;
+            cursor: pointer;
+            flex-wrap: wrap;
+            font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+        }
+        .config-panel input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: #ff4193;
+        }
+        .config-panel select,
+        .config-panel input[type="number"] {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #2a1759;
+            color: #fff;
+            padding: 0.4em;
+            border-radius: 0.4em;
+            font-size: inherit;
+        }
+        .config-panel select { min-width: 100px; }
+        .config-panel input[type="number"] { width: 70px; }
+        .button-row {
+            display: flex;
+            gap: 1em;
+            width: 100%;
+            max-width: 300px;
+            justify-content: center;
+        }
+        .play-button {
+            background: none;
+            cursor: pointer;
+            border: 2px solid #ff4193;
+            color: #ff4193;
+            text-transform: uppercase;
+            padding: .6em 2em;
+            font-weight: bold;
+            border-radius: .7em;
+            box-shadow: inset 0 0 .5em #ff4193aa, 0 0 .75em #ff4193aa;
+            text-shadow: 0 0 5px #ff4193aa, 0 0 1em #ff4193;
+            font-size: clamp(1rem, 4vw, 1.8rem);
+            transition: all 0.2s;
+            flex: 1;
+            min-width: 120px;
+            text-align: center;
+        }
+        .play-button:hover,
+        .play-button:focus {
+            background: #ff4193;
+            color: #fff;
+        }
+        .version {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 1em;
+        }
+    </style>
 </head>
-<body
-    data-is-touch="0"
-    data-state-car="0"
-    data-state-car-gun="0"
-    data-state-gun="0"
-    data-state-bike="0"
-    data-state-menu="1"
-    data-state-cutscene="0"
-    data-state-mobring="0"
-    data-state-job="0"
-    data-state-disable-controls="0"
-    data-state-panzer="0"
-    data-state-car-with-weapon="0"
-    data-state-hunter="0"
-    data-state-scope-mode="0"
-    data-state-scope-gun="0"
->
-    <div class="wasted-container" hidden></div>
-
+<body>
     <div class="start-container">
-        <div class="button-container">
-            <div class="cover"></div>
-            <div class="right-column">
-                <div id="config-panel" class="config-panel">
-                    <div class="config-option">
-                        <label for="config-mode">
-                            <span>Mode:</span>
-                            <select id="config-mode">
-                                <option value="auto">Auto (detect)</option>
-                                <option value="touch" selected>Touch</option>
-                                <option value="desktop">Desktop</option>
-                            </select>
-                        </label>
-                    </div>
-                    <div class="config-option">
-                        <label for="config-touch-controls">
-                            <input type="checkbox" id="config-touch-controls" checked>
-                            <span>Show touch controls</span>
-                        </label>
-                    </div>
-                    <div class="config-option">
-                        <label for="config-cheats">
-                            <input type="checkbox" id="config-cheats" checked>
-                            <span>Cheats</span>
-                        </label>
-                    </div>
-                    <div class="config-option">
-                        <label for="config-lowmem">
-                            <input type="checkbox" id="config-lowmem">
-                            <span>Low Memory Mode</span>
-                        </label>
-                    </div>
-                    <div class="config-option">
-                        <label for="config-max-fps">
-                            <span>Max FPS:</span>
-                            <input type="number" id="config-max-fps" min="0" max="240" value="0">
-                            <span>(0 = unlimited)</span>
-                        </label>
-                    </div>
-                </div>
-                <div class="click-to-play">
-                    <button id="click-to-play-button">Click to play</button>
-                </div>
+        <div class="title">GTA <span>Vice City</span></div>
+        <div id="config-panel" class="config-panel">
+            <div class="config-option">
+                <label for="config-mode">
+                    <span>Mode:</span>
+                    <select id="config-mode">
+                        <option value="auto">Auto (detect)</option>
+                        <option value="touch" selected>Touch</option>
+                        <option value="desktop">Desktop</option>
+                    </select>
+                </label>
+            </div>
+            <div class="config-option">
+                <label for="config-touch-controls">
+                    <input type="checkbox" id="config-touch-controls" checked>
+                    <span>Show touch controls</span>
+                </label>
+            </div>
+            <div class="config-option">
+                <label for="config-cheats">
+                    <input type="checkbox" id="config-cheats" checked>
+                    <span>Cheats</span>
+                </label>
+            </div>
+            <div class="config-option">
+                <label for="config-lowmem">
+                    <input type="checkbox" id="config-lowmem">
+                    <span>Low Memory Mode</span>
+                </label>
             </div>
         </div>
-    </div>
-
-    <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()"></canvas>
-
-    <div class="touch-controls-wrapper" id="touch-controls-wrapper">
-        <div id="move"></div>
-        <div id="look"></div>
-        <div class="touch-control radio"></div>
-        <div class="touch-control weapon"></div>
-        <div class="touch-control menu"></div>
-        <div class="touch-control fist"></div>
-        <div class="touch-control drift"></div>
-        <div class="touch-control run"></div>
-        <div class="touch-control car getIn"></div>
-        <div class="touch-control left"></div>
-        <div class="touch-control right"></div>
-        <div class="touch-control jump"></div>
-        <div class="touch-control car getOut"></div>
-        <div class="touch-control camera"></div>
-        <div class="touch-control mobile"></div>
-        <div class="touch-control job"></div>
-        <div class="touch-control horn"></div>
-        <div class="touch-control fireRight"></div>
-        <div class="touch-control fireLeft"></div>
-        <div class="touch-control back"></div>
-        <div class="touch-control down"></div>
-        <div class="touch-control home"></div>
-        <div class="touch-control cheat"></div>
-    </div>
-
-    <div class="loader-container" id="loader-container">
-        <div class="progress-bar-container" id="spinner">
-            <div class="progress-bar-fill"></div>
+        <div class="button-row">
+            <button class="play-button" id="play-btn">▶ Play</button>
         </div>
-        <div id="status">Downloading...</div>
-        <div><progress id="progress" hidden></progress></div>
+        <div class="version">reVC · Web Port</div>
     </div>
-
-    <!-- ⚡ CHEATS.JS LOADED FIRST (so toggleCheatMenu is defined early) -->
-<script type="text/javascript" src="cheats.js"></script>
-<script type="text/javascript" src="debug.js"></script>
-<script type="text/javascript" src="game.js"></script>
-<script type="text/javascript" src="GamepadEmulator.js"></script>
-
     <script>
         (function() {
-            const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || window.matchMedia("(pointer: coarse)").matches;
-            if (isTouchDevice) {
-                document.body.dataset.isTouch = '1';
+            function loadSettings() {
+                try {
+                    const saved = localStorage.getItem('vcsky.settings');
+                    if (saved) {
+                        const settings = JSON.parse(saved);
+                        if (settings.mode) document.getElementById('config-mode').value = settings.mode;
+                        if (settings.touchControls !== undefined) document.getElementById('config-touch-controls').checked = settings.touchControls;
+                        if (settings.cheats !== undefined) document.getElementById('config-cheats').checked = settings.cheats;
+                        if (settings.lowMemory !== undefined) document.getElementById('config-lowmem').checked = settings.lowMemory;
+                    }
+                } catch (e) {}
             }
-
-            const modeSelect = document.getElementById('config-mode');
-            const touchControlsCheck = document.getElementById('config-touch-controls');
-            const lowMemCheck = document.getElementById('config-lowmem');
-            const touchWrapper = document.getElementById('touch-controls-wrapper');
-
-            function updateTouchMode() {
-                const mode = modeSelect.value;
-                let isTouch = false;
-                if (mode === 'touch') isTouch = true;
-                else if (mode === 'desktop') isTouch = false;
-                else isTouch = isTouchDevice;
-                document.body.dataset.isTouch = isTouch ? '1' : '0';
-                const showControls = touchControlsCheck.checked;
-                touchWrapper.dataset.showControls = showControls ? '1' : '0';
-                window.__manualTouchMode = isTouch;
-                window.__showTouchControls = showControls;
-                window.__lowMemoryMode = lowMemCheck.checked;
+            function saveAndRedirect() {
+                const mode = document.getElementById('config-mode').value;
+                const touchControls = document.getElementById('config-touch-controls').checked;
+                const cheats = document.getElementById('config-cheats').checked;
+                const lowMemory = document.getElementById('config-lowmem').checked;
+                const settings = { mode, touchControls, cheats, lowMemory };
+                localStorage.setItem('vcsky.settings', JSON.stringify(settings));
+                localStorage.setItem('vcsky.mode', mode);
+                localStorage.setItem('vcsky.touchControls', touchControls ? '1' : '0');
+                localStorage.setItem('vcsky.cheats', cheats ? '1' : '0');
+                localStorage.setItem('vcsky.lowMemory', lowMemory ? '1' : '0');
+                window.location.href = 'game.html';
             }
-
-            modeSelect.addEventListener('change', updateTouchMode);
-            touchControlsCheck.addEventListener('change', updateTouchMode);
-            lowMemCheck.addEventListener('change', updateTouchMode);
-            updateTouchMode();
-
-            (function() {
-                const homeBtn = document.querySelector('.touch-control.home');
-                const startContainer = document.querySelector('.start-container');
-                const playBtn = document.getElementById('click-to-play-button');
-                let isSettingsOpen = false;
-
-                if (!homeBtn || !startContainer || !playBtn) return;
-
-                function openSettings() {
-                    if (isSettingsOpen) return;
-                    document.body.dataset.stateMenu = '0';
-                    if (typeof MainLoop !== 'undefined' && MainLoop.pause) {
-                        MainLoop.pause();
-                    }
-                    startContainer.style.display = 'flex';
-                    playBtn.textContent = 'Close Settings';
-                    isSettingsOpen = true;
-                }
-
-                function closeSettings() {
-                    if (!isSettingsOpen) return;
-
-                    if (typeof readSettings === 'function') {
-                        readSettings();
-                        const fpsInput = document.getElementById('config-max-fps');
-                        if (fpsInput && typeof window.applyFPSLimit === 'function') {
-                            const newFPS = parseInt(fpsInput.value) || 0;
-                            window.applyFPSLimit(newFPS);
-                        }
-                    }
-
-                    startContainer.style.display = 'none';
-                    document.body.dataset.stateMenu = '1';
-                    if (typeof MainLoop !== 'undefined' && MainLoop.resume) {
-                        MainLoop.resume();
-                    }
-                    playBtn.textContent = 'Click to play';
-                    isSettingsOpen = false;
-                }
-
-                homeBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    if (!isSettingsOpen) openSettings();
-                    else closeSettings();
-                });
-
-                playBtn.addEventListener('click', function(e) {
-                    if (isSettingsOpen) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        closeSettings();
-                        return false;
-                    }
-                }, true);
-
-                console.log('Home button ready.');
-            })();
+            document.getElementById('play-btn').addEventListener('click', saveAndRedirect);
+            loadSettings();
+            console.log('🎮 Launcher ready.');
         })();
     </script>
 </body>

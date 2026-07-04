@@ -12,9 +12,6 @@
         'modules/main.js'
     ];
 
-    if (typeof cheatsEnabled !== 'undefined' && cheatsEnabled)
-        modules.push('modules/cheats.js');
-
     if (typeof importScripts === 'function') {
         importScripts.apply(null, modules);
     } else {
