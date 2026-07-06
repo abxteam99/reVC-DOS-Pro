@@ -720,7 +720,7 @@ var IDBFS = {
             })
         };
 
-        if (window.syncfs !== undefined)
+        if (typeof window.syncfs === 'function')
             window.syncfs(IDBFS, mount, populate, callback, fn);
         else
             fn(callback);

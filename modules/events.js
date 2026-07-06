@@ -1,3 +1,5 @@
+// Events.js
+
 var Browser = {
     useWebGL: false,
     isFullscreen: false,
@@ -298,7 +300,6 @@ var Browser = {
                 }
             }
         }
-        // ----- LOW-MEMORY STRETCHING -----
         if (window.__lowMemoryMode) {
             if (!canvas.style.width || canvas.style.width === '') {
                 canvas.style.width = '100%';
@@ -313,7 +314,6 @@ var Browser = {
                 container.style.position = 'relative';
             }
         }
-        // ----- END LOW-MEMORY STRETCHING -----
     }
 };
 
@@ -384,7 +384,6 @@ var JSEvents = {
         }
         if (eventHandler.callbackfunc) {
             eventHandler.eventListenerFunc = function(event) {
-                if (window.cheatMenuOpen && !event._isCheat) return;
                 ++JSEvents.inEventHandler;
                 JSEvents.currentEventHandler = eventHandler;
                 JSEvents.runDeferredCalls();
@@ -760,7 +759,6 @@ var _emscripten_sample_gamepad_data = () => {
     try {
         if (navigator.getGamepads) return (JSEvents.lastGamepadState = navigator.getGamepads()) ? 0 : -1
     } catch (e) {
-        // Do NOT nullify navigator.getGamepads
     }
     return -1
 };

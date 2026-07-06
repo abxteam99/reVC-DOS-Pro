@@ -1,3 +1,5 @@
+// Loader.js (dead PACKAGE_PATH removed)
+
 (() => {
     var isPthread = typeof ENVIRONMENT_IS_PTHREAD != "undefined" && ENVIRONMENT_IS_PTHREAD;
     var isWasmWorker = typeof ENVIRONMENT_IS_WASM_WORKER != "undefined" && ENVIRONMENT_IS_WASM_WORKER;
@@ -5,12 +7,6 @@
     var isNode = globalThis.process && globalThis.process.versions && globalThis.process.versions.node && globalThis.process.type != "renderer";
 
     async function loadPackage(metadata) {
-        var PACKAGE_PATH = "";
-        if (typeof window === "object") {
-            PACKAGE_PATH = window["encodeURIComponent"](window.location.pathname.substring(0, window.location.pathname.lastIndexOf("/")) + "/")
-        } else if (typeof process === "undefined" && typeof location !== "undefined") {
-            PACKAGE_PATH = encodeURIComponent(location.pathname.substring(0, location.pathname.lastIndexOf("/")) + "/")
-        }
         var PACKAGE_NAME = "/home/caiiiycuk/vc/vc-sky/index.data";
         var REMOTE_PACKAGE_BASE = "index.data";
         var REMOTE_PACKAGE_NAME = Module["locateFile"] ? Module["locateFile"](REMOTE_PACKAGE_BASE, "") : REMOTE_PACKAGE_BASE;
@@ -106,17 +102,9 @@
                         continue;
                     }
                     createLazyFile(name, file["start"], file["end"]);
-                    Module["removeRunDependency"](`fp ${name}`)
                 }
-                Module["removeRunDependency"]("datafile_/home/caiiiycuk/vc/vc-sky/index.data")
             }
 
-            for (var file of allFiles) {
-                var name = file["filename"];
-                if (lowMemory && isAudio(name)) continue;
-                Module["addRunDependency"](`fp ${name}`)
-            }
-            Module["addRunDependency"]("datafile_/home/caiiiycuk/vc/vc-sky/index.data");
             if (!Module["preloadResults"]) Module["preloadResults"] = {};
             Module["preloadResults"][PACKAGE_NAME] = { fromCache: false };
             if (!fetched) {
