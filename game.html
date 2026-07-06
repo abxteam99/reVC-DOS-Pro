@@ -290,14 +290,20 @@
             box-shadow: 0 0 10px rgba(13, 240, 255, 0.2);
         }
 
+        .status-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 0.35rem;
+            min-height: 20px;
+        }
+
         .status {
             font-size: 0.66rem;
             font-weight: 700;
             color: var(--muted);
             text-transform: uppercase;
             letter-spacing: 0.6px;
-            margin-top: 0.35rem;
-            min-height: 16px;
             transition: color 0.3s ease;
         }
         .status.loaded {
@@ -307,6 +313,41 @@
         .status.error {
             color: #ef4444;
             text-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+        }
+
+        .remove-file-btn {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            display: none;
+        }
+        .remove-file-btn.visible {
+            display: inline-block;
+        }
+        .remove-file-btn:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: #ef4444;
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+        }
+
+        /* Error message for wrong file types */
+        .file-error-msg {
+            color: #ef4444;
+            font-size: 0.65rem;
+            font-weight: 700;
+            margin-top: 0.25rem;
+            display: none;
+        }
+        .file-error-msg.visible {
+            display: block;
         }
 
         #start-game-btn {
@@ -478,10 +519,7 @@
         <div class="touch-control drift"></div>
         <div class="touch-control run"></div>
         <div class="touch-control car getIn"></div>
-        <div class="touch-control left"></div>
-        <div class="touch-control right"></div>
         <div class="touch-control jump"></div>
-        <div class="touch-control car getOut"></div>
         <div class="touch-control camera"></div>
         <div class="touch-control mobile"></div>
         <div class="touch-control job"></div>
@@ -489,7 +527,6 @@
         <div class="touch-control fireRight"></div>
         <div class="touch-control fireLeft"></div>
         <div class="touch-control back"></div>
-        <div class="touch-control down"></div>
         <div class="touch-control home"></div>
         <div class="touch-control cheat"></div>
     </div>
@@ -510,12 +547,20 @@
                 <div class="file-input-group">
                     <p>1. Primary Archive Data</p>
                     <input type="file" id="data-file-input" class="file-input-ui" accept=".data">
-                    <div id="data-status" class="status">Offline</div>
+                    <div class="file-error-msg" id="data-error-msg">Invalid file – please select a .data file</div>
+                    <div class="status-row">
+                        <div id="data-status" class="status">Offline</div>
+                        <button id="remove-data-btn" class="remove-file-btn">Remove</button>
+                    </div>
                 </div>
                 <div class="file-input-group">
                     <p>2. Execution Core Binary</p>
                     <input type="file" id="wasm-file-input" class="file-input-ui" accept=".wasm">
-                    <div id="wasm-status" class="status">Offline</div>
+                    <div class="file-error-msg" id="wasm-error-msg">Invalid file – please select a .wasm file</div>
+                    <div class="status-row">
+                        <div id="wasm-status" class="status">Offline</div>
+                        <button id="remove-wasm-btn" class="remove-file-btn">Remove</button>
+                    </div>
                 </div>
             </div>
             <button id="start-game-btn" disabled>Initialize</button>
@@ -529,126 +574,27 @@
         <div id="status">Syncing...</div>
         <div><progress id="progress" hidden></progress></div>
     </div>
-    <script>
-        (function() {
-            let settings = {};
-            try {
-                const saved = localStorage.getItem('vcsky.settings');
-                if (saved) settings = JSON.parse(saved);
-            } catch (e) {}
-            const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0 ||
-                window.matchMedia('(pointer: coarse)').matches;
-            let isTouch = isTouchDevice;
-            if (settings.mode === 'touch') isTouch = true;
-            else if (settings.mode === 'desktop') isTouch = false;
-            window.__isTouchMode = isTouch;
-            window.__showTouchControls = settings.touchControls !== undefined ? settings.touchControls : true;
-            window.__cheatsEnabled = settings.cheats !== undefined ? settings.cheats : true;
-            window.__lowMemoryMode = settings.lowMemory || false;
-            window.__maxFPS = settings.maxFPS || 0;
-            localStorage.setItem('vcsky.mode', settings.mode || 'auto');
-            localStorage.setItem('vcsky.touchControls', window.__showTouchControls ? '1' : '0');
-            localStorage.setItem('vcsky.cheats', window.__cheatsEnabled ? '1' : '0');
-            localStorage.setItem('vcsky.lowMemory', window.__lowMemoryMode ? '1' : '0');
-            localStorage.setItem('vcsky.maxFPS', String(window.__maxFPS));
-            document.body.dataset.isTouch = isTouch ? '1' : '0';
-            console.log('🎮 Game page loaded with settings:', settings);
-        })();
-    </script>
+
+    <!-- Scripts -->
     <script type="text/javascript" src="debug.js"></script>
     <script type="text/javascript" src="GamepadEmulator.js"></script>
+    <script type="text/javascript" src="file-loader.js"></script>
     <script type="text/javascript" src="game.js"></script>
+
+    <!-- Canvas touch-action fix -->
     <script>
         (function() {
-            window.__gameApi = {
-                typeCheat: function(code) {
-                    if (typeof window.typeCheat === 'function') window.typeCheat(code);
-                    else { if (!window._cheatQueue) window._cheatQueue = [];
-                        window._cheatQueue.push(code); }
-                },
-                addMoney: function() { if (typeof window.addMoney === 'function') window.addMoney(); },
-                getDebugLogs: function() {
-                    if (typeof window.getDebugLogLines === 'function') return window.getDebugLogLines();
-                    return [];
-                },
-                scanMemory: function(value, type) {
-                    if (typeof window._scanMemory === 'function') return window._scanMemory(value, type);
-                    return [];
-                },
-                readMemory: function(addr, type) {
-                    if (typeof window.readMemory === 'function') return window.readMemory(addr, type);
-                    return null;
-                },
-                writeMemory: function(addr, type, value) {
-                    if (typeof window.writeMemory === 'function') window.writeMemory(addr, type, value);
-                },
-                toggleGodMode: function(enable) {
-                    if (typeof window.toggleGodMode === 'function') window.toggleGodMode(enable);
-                },
-                toggleAirBrake: function(enable) {
-                    if (typeof window.toggleAirBrake === 'function') window.toggleAirBrake(enable);
-                },
-                setFlySpeed: function(speed) {
-                    if (typeof window.setFlySpeed === 'function') window.setFlySpeed(speed);
-                },
-                toggleFullscreen: function(enable) {
-                    if (typeof Browser !== 'undefined' && Browser.requestFullscreen && Browser.exitFullscreen) {
-                        if (enable === undefined) {
-                            enable = !Browser.isFullscreen;
-                        }
-                        if (enable) {
-                            Browser.requestFullscreen();
-                        } else {
-                            try { Browser.exitFullscreen(); } catch (e) {}
-                        }
-                    }
-                },
-                getErrorLogs: function() {
-                    if (window._errorLogs) return window._errorLogs.map(e => `[${e.timestamp}] ${e.type}: ${e.message}`);
-                    return [];
-                },
-                clearLogs: function() {
-                    if (typeof window.clearLogs === 'function') window.clearLogs();
-                },
-                cheatWindowClosed: function() { console.log('Cheat popup closed.'); }
-            };
-            window.openCheatPopup = function() {
-                if (window.cheatWindow && !window.cheatWindow.closed) {
-                    window.cheatWindow.focus();
-                    return;
-                }
-                const width = Math.min(400, window.innerWidth - 40);
-                const height = Math.min(600, window.innerHeight - 40);
-                const left = (window.innerWidth - width) / 2;
-                const top = (window.innerHeight - height) / 2;
-                const features = `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`;
-                window.cheatWindow = window.open('cheats.html', 'CheatEngine', features);
-                if (window.cheatWindow) window.cheatWindow.focus();
-                else window.open('cheats.html', '_blank');
-            };
-            document.querySelector('.touch-control.cheat')?.addEventListener('click', window.openCheatPopup);
-            document.querySelector('.touch-control.cheat')?.addEventListener('touchstart', function(e) {
-                e.preventDefault();
-                window.openCheatPopup();
-            }, { passive: false });
-            document.querySelector('.touch-control.home')?.addEventListener('click', function() {
-                window.location.href = 'index.html';
-            });
-            document.querySelector('.touch-control.home')?.addEventListener('touchstart', function(e) {
-                e.preventDefault();
-                window.location.href = 'index.html';
-            }, { passive: false });
             window.addEventListener('load', function() {
                 const canvas = document.getElementById('canvas');
                 if (canvas) {
                     canvas.style.touchAction = 'none';
                     canvas.style.pointerEvents = 'auto';
-                    console.log('[Game] Canvas touch settings applied on load.');
                 }
             });
-            console.log('🎮 ️Game API exposed.');
         })();
     </script>
+
+    <!-- F3 cheat popup -->
     <script>
         document.addEventListener('keydown', function(e) {
             if (e.key === 'F3') {

@@ -32,149 +32,9 @@ html, body {
     touch-action: none;
 }
 
-/* ─── START CONTAINER ─── */
-.start-container {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 10000;
-    padding: 1em;
-    background: inherit;
-    pointer-events: auto;
-}
-.gameIsStarted .start-container {
-    display: none;
-}
-
-/* ─── BUTTON CONTAINER ─── */
-.button-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1.5em;
-    width: 100%;
-    max-width: 600px;
-    margin: 0 auto;
-}
-
-/* ─── RIGHT COLUMN ─── */
-.right-column {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1.5em;
-    width: 100%;
-    max-width: 400px;
-}
-
-/* ─── PLAY BUTTON ─── */
-.click-to-play {
-    text-align: center;
-    width: 100%;
-}
-.click-to-play button {
-    background: none;
-    cursor: pointer;
-    border: 2px solid #ff4193;
-    color: #ff4193;
-    text-transform: uppercase;
-    padding: .3em .5em;
-    font-weight: bold;
-    border-radius: .7em;
-    box-shadow: inset 0 0 .5em #ff4193aa, 0 0 .75em #ff4193aa;
-    text-shadow: 0 0 5px #ff4193aa, 0 0 1em #ff4193;
-    font-size: clamp(1.2rem, 5vw, 2.5rem);
-}
-.click-to-play button:hover,
-.click-to-play button:focus {
-    background: #ff4193;
-    color: #fff;
-}
-
-/* ─── SETTINGS PANEL ─── */
-.config-panel {
-    margin: 0;
-    padding: 1em;
-    border: 2px solid #2a1759;
-    max-width: 100%;
-    width: 100%;
-    border-radius: 1em;
-    backdrop-filter: blur(20px);
-    text-align: left;
-    color: #fff;
-    background: rgba(16,10,54,0.7);
-    display: block;
-    pointer-events: auto;
-}
-.config-panel .config-option {
-    margin: 0.7em 0;
-}
-.config-panel label {
-    display: flex;
-    align-items: center;
-    gap: 0.5em;
-    cursor: pointer;
-    flex-wrap: wrap;
-    font-size: clamp(0.9rem, 2.5vw, 1.1rem);
-}
-.config-panel input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-    accent-color: #ff4193;
-}
-.config-panel select,
-.config-panel input[type="number"] {
-    background: rgba(0,0,0,0.5);
-    border: 1px solid #2a1759;
-    color: #fff;
-    padding: 0.4em;
-    border-radius: 0.4em;
-    font-size: inherit;
-}
-.config-panel select {
-    min-width: 100px;
-}
-.config-panel input[type="number"] {
-    width: 70px;
-}
-
-/* ─── LOADER ─── */
-.loader-container {
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: end;
-    padding: 2em;
-}
-.gameIsStarted .loader-container {
-    display: none;
-    z-index: 3;
-    position: fixed;
-    inset: 0;
-}
-#status {
-    color: #fff;
-    font-size: 1.2rem;
-    margin-bottom: 0.5rem;
-}
-.progress-bar-container {
-    width: 80%;
-    max-width: 400px;
-    height: 8px;
-    background: rgba(255,255,255,0.2);
-    border-radius: 4px;
-    overflow: hidden;
-}
-.progress-bar-fill {
-    height: 100%;
-    background: #ff4193;
-    width: 0%;
-    transition: width 0.3s;
+/* ─── TOUCH MODE: CANVAS MUST NOT RECEIVE DIRECT INPUT ─── */
+.gameIsStarted[data-is-touch="1"] #canvas {
+    pointer-events: none !important;
 }
 
 /* ─── TOUCH CONTROLS WRAPPER ─── */
@@ -219,29 +79,6 @@ html, body {
     -webkit-user-select: none;
     margin: 6px;
     box-sizing: border-box;
-}
-
-/* ─── FULLSCREEN FIX ─── */
-.fs-container {
-    position: relative !important;
-    width: 100% !important;
-    height: 100% !important;
-    overflow: hidden !important;
-}
-.fs-container .touch-controls-wrapper {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-}
-.fs-container .touch-controls-wrapper #move,
-.fs-container .touch-controls-wrapper #look {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-}
-.fs-container .touch-control {
-    position: absolute;
 }
 
 /* ----- INDIVIDUAL BUTTON BASE SIZES & POSITIONS (gameplay) ----- */
@@ -320,9 +157,19 @@ html, body {
     width: 12vw; height: 14vh;
 }
 
-/* ----- BACK BUTTON – hidden by default (only shown on menu) ----- */
+/* ----- BACK BUTTON – hidden by default, shown only on menu ----- */
 .touch-control.back {
     display: none;
+    background-image: url('touch-icons/back.svg');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    width: 16vw;
+    height: 16vw;
+    bottom: 8vh;
+    left: 1vw;
+    z-index: 100000 !important;
+    pointer-events: auto !important;
 }
 
 /* ----- HOME BUTTON – hidden by default, shown only in menu ----- */
@@ -479,6 +326,7 @@ html, body {
     height: 16vw;
     bottom: 8vh;
     left: 1vw;
+    z-index: 100000 !important;
 }
 
 /* Home – bottom-middle */
@@ -504,7 +352,7 @@ html, body {
     display: none !important;
 }
 
-/* Hide car.getIn on menu – back button replaces it */
+/* Hide car.getIn on menu */
 [data-state-menu="1"] .touch-control.car.getIn {
     display: none !important;
 }
@@ -517,123 +365,24 @@ html, body {
     cursor: none !important;
 }
 
+/* ─── HIDE CURSOR EVERYWHERE IN TOUCH MODE ─── */
+[data-is-touch="1"] body {
+    cursor: none !important;
+}
+
 /* ─── FIX: Ensure menu buttons are always on top in fullscreen ─── */
-.touch-control.back,
 .touch-control.home,
-.touch-control.run {
+.touch-control.run,
+.touch-control.back {
     z-index: 100000 !important;
     pointer-events: auto !important;
 }
 
-/* ─── DOWN BUTTON (menu navigation) ─── */
-.touch-control.down {
-    display: none;
-    background-image: url('touch-icons/down.svg');
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-    width: 12vw;
-    height: 12vw;
-    bottom: 2vh;
-    left: 20vw;
-    z-index: 100000 !important;
-    pointer-events: auto !important;
-}
-[data-state-menu="1"] .touch-control.down {
-    display: block !important;
-}
-
-/* ─── LANDSCAPE LAYOUT (redesigned: proper spacing, no extra borders) ─── */
-@media (orientation: landscape) {
-    .start-container {
-        padding: 1.5vh 2vw;
-    }
-
-    .button-container {
-        /* Switch to horizontal flex for a clean two-panel look */
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        justify-content: center;
-        gap: 3vw;
-        max-width: 90vw;
-        max-height: 90vh;
-        margin: 0 auto;
-        padding: 1.5em;
-    }
-
-    /* Cover hidden (already removed from HTML) */
-    .button-container .cover {
-        display: none;
-    }
-
-    .right-column {
-        flex: 1;
-        max-width: 50vw;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        gap: 2.5vh;
-        margin: 0;
-        padding: 0;
-    }
-
-    .config-panel {
-        width: 100%;
-        max-width: 100%;
-        margin: 0;
-        padding: 1.2em 1.5em;
-        font-size: clamp(0.7rem, 1.2vw, 0.9rem);
-        max-height: 65vh;
-        overflow-y: auto;
-    }
-
-    .config-panel .config-option {
-        margin: 0.4em 0;
-    }
-
-    .config-panel label {
-        font-size: clamp(0.65rem, 1vw, 0.85rem);
-    }
-
-    .config-panel select,
-    .config-panel input[type="number"] {
-        padding: 0.25em 0.5em;
-        font-size: clamp(0.6rem, 0.9vw, 0.8rem);
-    }
-
-    .config-panel input[type="checkbox"] {
-        width: 16px;
-        height: 16px;
-    }
-
-    .click-to-play button {
-        font-size: clamp(1.2rem, 3vw, 1.8rem);
-        padding: 0.5em 2em;
-        white-space: nowrap;
-    }
-}
-
-/* ─── EXTRA SMALL LANDSCAPE ─── */
-@media (orientation: landscape) and (max-height: 450px) {
-    .start-container {
-        padding: 0.5vh 1vw;
-    }
-
-    .button-container {
-        padding: 1em;
-        gap: 2vw;
-    }
-
-    .config-panel {
-        padding: 0.8em 1em;
-        max-height: 55vh;
-    }
-
-    .click-to-play button {
-        font-size: clamp(0.9rem, 2vw, 1.3rem);
-        padding: 0.4em 1.5em;
-    }
+/* ─── LOOK AREA ADJUSTMENT: larger & moved right (portrait) ─── */
+.touch-controls-wrapper #look {
+    width: 22vw !important;
+    right: calc(2vw + 10px) !important;
+    z-index: 10000 !important;
 }
 
 /* ─── RESPONSIVE TWEAKS (portrait) ─── */
@@ -642,17 +391,65 @@ html, body {
     .touch-control.run { width: 18vw; height: 18vw; }
 }
 
-/* ─── MISC ─── */
-#error-log {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    background: red;
-    color: white;
-    z-index: 99999;
-    font-size: 14px;
-    padding: 8px;
-    display: none;
+/* ─── LANDSCAPE MODE ─── */
+@media (orientation: landscape) {
+    /* Move joystick gap */
+    #move {
+        left: 13vw !important;
+    }
+
+    /* Look joystick */
+    .touch-controls-wrapper #look {
+        right: 8.5vw !important;
+        top: 4vh !important;
+        width: 20vw !important;
+        height: 25vh !important;
+    }
+
+    /* Medium button sizes – comfortable, not too big or small */
+    .touch-control.menu {
+        width: 15vh; height: 15vh;
+    }
+    .touch-control.run {
+        width: 18vh; height: 18vh;
+    }
+    .touch-control.jump {
+        width: 16vh; height: 16vh;
+    }
+    .touch-control.car.getIn {
+        width: 16vh; height: 16vh;
+    }
+    .touch-control.drift,
+    .touch-control.fist {
+        width: 16vh; height: 16vh;
+    }
+    .touch-control.camera {
+        width: 10vh; height: 10vh;
+    }
+    .touch-control.horn {
+        width: 10vh; height: 10vh;
+    }
+    .touch-control.job,
+    .touch-control.mobile {
+        width: 12vh; height: 12vh;
+    }
+    .touch-control.radio {
+        width: 30vh; height: 10vh;
+    }
+    .touch-control.weapon {
+        width: 15vh; height: 18vh;
+    }
+    .touch-control.back {
+        width: 18vh; height: 18vh;
+    }
+    .touch-control.home {
+        width: 16vh; height: 16vh;
+    }
+    .touch-control.cheat {
+        width: 12vh; height: 12vh;
+    }
+    .touch-control.fireRight,
+    .touch-control.fireLeft {
+        width: 12vh; height: 12vh;
+    }
 }
-.disabled { opacity: 0.4; filter: grayscale(100%); }

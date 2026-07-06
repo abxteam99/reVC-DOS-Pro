@@ -373,17 +373,21 @@
                     const saved = localStorage.getItem("vcsky.settings");
                     if (saved) {
                         const settings = JSON.parse(saved);
-                        if (settings.mode) {
-                            document.getElementById("config-mode").value = settings.mode;
+                        const configModeEl = document.getElementById("config-mode");
+                        if (configModeEl && settings.mode) {
+                            configModeEl.value = settings.mode;
                         }
-                        if (typeof settings.touchControls !== 'undefined') {
-                            document.getElementById("config-touch-controls").checked = settings.touchControls;
+                        const touchControlsEl = document.getElementById("config-touch-controls");
+                        if (touchControlsEl && typeof settings.touchControls !== 'undefined') {
+                            touchControlsEl.checked = settings.touchControls;
                         }
-                        if (typeof settings.cheats !== 'undefined') {
-                            document.getElementById("config-cheats").checked = settings.cheats;
+                        const cheatsEl = document.getElementById("config-cheats");
+                        if (cheatsEl && typeof settings.cheats !== 'undefined') {
+                            cheatsEl.checked = settings.cheats;
                         }
-                        if (typeof settings.lowMemory !== 'undefined') {
-                            document.getElementById("config-lowmem").checked = settings.lowMemory;
+                        const lowMemoryEl = document.getElementById("config-lowmem");
+                        if (lowMemoryEl && typeof settings.lowMemory !== 'undefined') {
+                            lowMemoryEl.checked = settings.lowMemory;
                         }
                     }
                 } catch (e) {
@@ -392,10 +396,18 @@
             }
 
             function saveAndPlay() {
-                const mode = document.getElementById("config-mode").value;
-                const touchControls = document.getElementById("config-touch-controls").checked;
-                const cheats = document.getElementById("config-cheats").checked;
-                const lowMemory = document.getElementById("config-lowmem").checked;
+                const modeEl = document.getElementById("config-mode");
+                const touchControlsEl = document.getElementById("config-touch-controls");
+                const cheatsEl = document.getElementById("config-cheats");
+                const lowMemoryEl = document.getElementById("config-lowmem");
+                if (!modeEl || !touchControlsEl || !cheatsEl || !lowMemoryEl) {
+                    console.error("Missing configuration elements");
+                    return;
+                }
+                const mode = modeEl.value;
+                const touchControls = touchControlsEl.checked;
+                const cheats = cheatsEl.checked;
+                const lowMemory = lowMemoryEl.checked;
                 const settings = {
                     mode,
                     touchControls,

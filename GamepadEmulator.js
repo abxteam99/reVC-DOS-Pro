@@ -32,7 +32,6 @@ const definePropertiesFromSource = (target, source) => defineProperties(target, 
 
 const definePublicProperty = (obj, key, value) => setProperty(obj, typeof key !== "symbol" ? key + "" : key, value);
 
-// Polyfill for modulepreload (unchanged)
 (function() {
     const relList = document.createElement("link").relList;
     if (relList && relList.supports && relList.supports("modulepreload")) return;
@@ -141,8 +140,6 @@ var GamepadElementClass = (cls => {
     return cls;
 })(GamepadElementClass || {});
 
-// ---- Removed unused BUTTON_NAMES, TAP_TARGET_NAMES, DIAGONAL_DPAD_MAPPING ----
-
 class GamepadStateTracker {
     constructor(config) {
         definePublicProperty(this, "updateDelay");
@@ -164,8 +161,6 @@ class GamepadStateTracker {
         this.gamepadDisconnectListeners = [];
         this.gamepadButtonChangeListeners = [];
         this.gamepadAxisChangeListeners = [];
-
-        navigator.gamepadInputEmulation = "gamepad";
 
         this._requestAnimationFrame = window.requestAnimationFrame ||
             window.mozRequestAnimationFrame ||
@@ -296,7 +291,14 @@ class GamepadStateTracker {
             if (gamepad) {
                 this.checkForAxisChanges(i, gamepad);
                 this.checkForButtonChanges(i, gamepad);
-                this.currentStateOfGamepads[i] = gamepad;
+                this.currentStateOfGamepads[i] = {
+                    axes: [...gamepad.axes],
+                    buttons: gamepad.buttons.map(b => ({
+                        pressed: b.pressed,
+                        value: b.value,
+                        touched: b.touched
+                    }))
+                };
             }
         }
     }
@@ -395,6 +397,7 @@ class GamepadStateTracker {
 }
 
 function normalizeVector(x, y, maxDistance) {
+    if (maxDistance === 0) return { x: 0, y: 0 };
     const distance = Math.sqrt(x * x + y * y);
     if (distance > maxDistance) {
         return {
@@ -471,11 +474,11 @@ class GamepadEmulator {
             id: "Emulated Gamepad " + index + " (Xinput STANDARD GAMEPAD)",
             mapping: "standard",
             index: index,
-            buttons: new Array(buttonCount).fill({
+            buttons: Array.from({ length: buttonCount }, () => ({
                 pressed: false,
                 value: 0,
                 touched: false
-            }, 0, buttonCount),
+            })),
             axes: new Array(axisCount).fill(0, 0, axisCount),
             hapticActuators: []
         };
@@ -593,7 +596,7 @@ class GamepadEmulator {
             const onTouchStart = (e) => {
                 const target = e.changedTouches[0].target;
                 if (target === tapTarget || target.parentElement === tapTarget) {
-                    e.preventDefault();  // prevent mouse emulation
+                    e.preventDefault();
                 }
             };
             window.addEventListener("touchstart", onTouchStart, {
@@ -631,7 +634,6 @@ class GamepadEmulator {
                                 tapTarget.setPointerCapture(e.pointerId);
                             }
                         } catch (err) {
-                            // ignore
                         }
                     } else {
                         try {
@@ -775,7 +777,6 @@ class GamepadEmulator {
                         config.tapTarget.setPointerCapture(e.pointerId);
                     }
                 } catch (err) {
-                    // ignore
                 }
             } else {
                 try {
@@ -1072,7 +1073,7 @@ class GamepadEmulator {
                         for (let j = 0; j < axisCount; j++) {
                             const emuAxis = emu.axes[j] ?? 0;
                             const realAxis = existing.axes[j] ?? 0;
-                            axes[j] = Math.abs(emuAxis) > Math.abs(realAxis) ? emuAxis : realAxis;
+                            axes[j] = (Math.abs(emuAxis) > 0.01) ? emuAxis : realAxis;
                         }
 
                         Object.defineProperty(result[i], "axes", {

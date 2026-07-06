@@ -517,11 +517,9 @@
     <script>
         (function() {
             const gameOpener = window.opener;
-            let gameApi = null;
             let gameAvailable = false;
 
             if (gameOpener && !gameOpener.closed && gameOpener.__gameApi) {
-                gameApi = gameOpener.__gameApi;
                 gameAvailable = true;
             } else {
                 document.getElementById('error-box').classList.add('visible');
@@ -532,12 +530,18 @@
             }
 
             function callGameApi(method, ...args) {
-                if (!gameAvailable || !gameApi || typeof gameApi[method] !== 'function') {
-                    console.warn('Game API not available for:', method);
+                if (!window.opener || window.opener.closed || !window.opener.__gameApi) {
+                    document.getElementById('error-box').classList.add('visible');
+                    document.querySelector('#cheat-engine-ui').classList.add('ui-disabled');
+                    gameAvailable = false;
+                    return null;
+                }
+                if (typeof window.opener.__gameApi[method] !== 'function') {
+                    console.warn('Game API method not available:', method);
                     return null;
                 }
                 try {
-                    return gameApi[method](...args);
+                    return window.opener.__gameApi[method](...args);
                 } catch (e) {
                     console.error('Error calling gameApi.' + method, e);
                     return null;
@@ -786,7 +790,7 @@
                 logInterval = setInterval(() => {
                     const activeTab = document.querySelector('.ce-tab-content.active');
                     if (activeTab && activeTab.id === 'tab-debugger') {
-                        if (gameAvailable && gameApi) {
+                        if (gameAvailable && window.opener && window.opener.__gameApi) {
                             updateNetworkLogs();
                             updateErrorLogs();
                         }

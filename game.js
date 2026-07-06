@@ -1,50 +1,12 @@
-// ============================================================
-// PATCH: Safe pointer lock to avoid WrongDocumentError
-// ============================================================
-if (HTMLCanvasElement.prototype.requestPointerLock) {
-    const originalLock = HTMLCanvasElement.prototype.requestPointerLock;
-    HTMLCanvasElement.prototype.requestPointerLock = function() {
-        try {
-            if (document.contains(this) && document.hasFocus()) {
-                originalLock.call(this);
-            } else {
-                console.warn('Pointer lock skipped: canvas not ready or no focus.');
-            }
-        } catch (e) {
-            console.warn('Pointer lock error:', e.message);
-        }
-    };
-}
-
-// ============================================================
-// GTA: Vice City – Main Game Logic (Offline/Local)
-// ============================================================
-
-// ------------------------------------------------------------------
-// 1. GLOBALS & SETTINGS
-// ------------------------------------------------------------------
-
-var haveOriginalGame = true;
-localStorage.setItem('vcsky.haveOriginalGame', 'true');
-
 var statusElement = document.getElementById("status");
 var progressElement = document.getElementById("progress");
 var spinnerElement = document.getElementById('spinner');
 var loaderContainer = document.getElementById('loader-container');
 
-var defaultDataContent = "/vcbr/vc-sky-en-v6.data";
-var defaultWasmContent = "/vcbr/vc-sky-en-v6.wasm";
-var data_content = defaultDataContent;
-var wasm_content = defaultWasmContent;
-
-// ============================================================
-// READ SETTINGS FROM localStorage / window.__* flags
-// ============================================================
 let cheatsEnabled = window.__cheatsEnabled !== undefined ? window.__cheatsEnabled : true;
 let lowMemory = window.__lowMemoryMode || false;
 let showTouchControls = window.__showTouchControls !== undefined ? window.__showTouchControls : true;
 
-// Determine touch mode based on settings and detection
 const isTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0 ||
                       window.matchMedia('(pointer: coarse)').matches;
 const storedMode = localStorage.getItem('vcsky.mode') || 'auto';
@@ -54,13 +16,12 @@ if (storedMode === 'touch') {
     isTouch = true;
 } else if (storedMode === 'desktop') {
     isTouch = false;
-} else { // 'auto' – detect
+} else {
     isTouch = isTouchDevice;
 }
 if (window.__isTouchMode !== undefined) {
     isTouch = window.__isTouchMode;
 }
-// If the user explicitly chose 'touch', force it (even if detection failed)
 if (storedMode === 'touch' && !isTouch) {
     isTouch = true;
 }
@@ -69,12 +30,7 @@ document.body.dataset.isTouch = isTouch ? '1' : '0';
 
 console.log(`[Game] Settings: cheats=${cheatsEnabled}, touch=${isTouch}, showControls=${showTouchControls}, lowMem=${lowMemory}`);
 
-// ------------------------------------------------------------------
-// 2. UTILITY FUNCTIONS
-// ------------------------------------------------------------------
-
 const t = (key) => ({
-    clickToPlayFull: "Click to play",
     downloading: "Downloading",
     clickToContinue: "Click to continue..."
 }[key] || key);
@@ -110,7 +66,6 @@ function forceTouchRecalc() {
     if (!isTouch) return;
     const wrapper = document.getElementById('touch-controls-wrapper');
     if (!wrapper) return;
-    // Apply showTouchControls: if false, hide it
     wrapper.style.display = showTouchControls ? 'block' : 'none';
     void wrapper.offsetHeight;
     wrapper.style.display = showTouchControls ? 'block' : 'none';
@@ -121,7 +76,7 @@ function reapplyTouchControls() {
     if (!isTouch) return;
     const canvas = document.getElementById('canvas');
     if (canvas) {
-        canvas.style.pointerEvents = 'auto';
+        canvas.style.pointerEvents = 'none';
         canvas.style.touchAction = 'none';
     }
     document.body.setAttribute('data-is-touch', '1');
@@ -134,107 +89,22 @@ function reapplyTouchControls() {
 
 function setMenuModeActive(active) {
     if (!isTouch) return;
-    const lookElement = document.getElementById('look');
     const moveElement = document.getElementById('move');
     const canvas = document.getElementById('canvas');
     if (active) {
-        if (lookElement) { lookElement.style.pointerEvents = 'none'; lookElement.style.touchAction = 'auto'; }
-        if (moveElement) { moveElement.style.pointerEvents = 'none'; moveElement.style.touchAction = 'auto'; }
+        if (moveElement) { moveElement.style.pointerEvents = 'auto'; moveElement.style.touchAction = 'none'; }
         if (canvas) canvas.style.touchAction = 'auto';
     } else {
-        if (lookElement) { lookElement.style.pointerEvents = 'auto'; lookElement.style.touchAction = 'none'; }
         if (moveElement) { moveElement.style.pointerEvents = 'auto'; moveElement.style.touchAction = 'none'; }
         if (canvas) canvas.style.touchAction = 'none';
     }
 }
 
-// ------------------------------------------------------------------
-// 3. FILE SELECTION (OFFLINE LOADER)
-// ------------------------------------------------------------------
-
-let loadedDataBuffer = null;
-let loadedWasmBuffer = null;
-
-function waitForFileSelection() {
-    return new Promise((resolve) => {
-        const dataInput = document.getElementById('data-file-input');
-        const wasmInput = document.getElementById('wasm-file-input');
-        const startBtn = document.getElementById('start-game-btn');
-        const dataStatus = document.getElementById('data-status');
-        const wasmStatus = document.getElementById('wasm-status');
-        const progressText = document.getElementById('progress-text');
-
-        let dataLoaded = false;
-        let wasmLoaded = false;
-
-        function checkReady() {
-            if (dataLoaded && wasmLoaded) {
-                startBtn.disabled = false;
-                startBtn.textContent = 'START GAME';
-                progressText.textContent = '✅ Both files ready! Click START.';
-            }
-        }
-
-        dataInput.addEventListener('change', function() {
-            const file = this.files[0];
-            if (!file) return;
-            progressText.textContent = '⏳ Reading data file...';
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                loadedDataBuffer = new Uint8Array(e.target.result);
-                dataLoaded = true;
-                dataStatus.textContent = `✅ Loaded ${(loadedDataBuffer.length / 1024 / 1024).toFixed(2)} MB`;
-                dataStatus.className = 'status loaded';
-                progressText.textContent = '📦 Data file ready.';
-                checkReady();
-            };
-            reader.onerror = function() {
-                dataStatus.textContent = '❌ Error reading file';
-                dataStatus.className = 'status error';
-                progressText.textContent = '❌ Failed to read data file.';
-            };
-            reader.readAsArrayBuffer(file);
-        });
-
-        wasmInput.addEventListener('change', function() {
-            const file = this.files[0];
-            if (!file) return;
-            progressText.textContent = '⏳ Reading WASM file...';
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                loadedWasmBuffer = e.target.result;
-                wasmLoaded = true;
-                wasmStatus.textContent = `✅ Loaded ${(loadedWasmBuffer.byteLength / 1024 / 1024).toFixed(2)} MB`;
-                wasmStatus.className = 'status loaded';
-                progressText.textContent = '📦 WASM file ready.';
-                checkReady();
-            };
-            reader.onerror = function() {
-                wasmStatus.textContent = '❌ Error reading file';
-                wasmStatus.className = 'status error';
-                progressText.textContent = '❌ Failed to read WASM file.';
-            };
-            reader.readAsArrayBuffer(file);
-        });
-
-        startBtn.addEventListener('click', function() {
-            if (dataLoaded && wasmLoaded) {
-                document.getElementById('file-loader-overlay').style.display = 'none';
-                resolve({ data: loadedDataBuffer, wasm: loadedWasmBuffer });
-            } else {
-                alert('Please select both files first.');
-            }
-        });
-    });
-}
-
-// ------------------------------------------------------------------
-// 4. GAME START
-// ------------------------------------------------------------------
-
+// ============================================================
+// GAME START – uses file-loader.js promise
+// ============================================================
 function startGame() {
     if (loaderContainer) loaderContainer.style.display = "flex";
-    if (typeof window.updateDebugVisibility === 'function') window.updateDebugVisibility();
     const canvas = document.getElementById('canvas');
     if (canvas) {
         canvas.width = 640;
@@ -248,14 +118,20 @@ function startGame() {
         canvas.style.objectFit = 'fill';
         canvas.style.imageRendering = 'pixelated';
         canvas.style.touchAction = 'none';
-        canvas.style.pointerEvents = 'auto';
+        canvas.style.pointerEvents = isTouch ? 'none' : 'auto';
     }
     if (isTouch) { reapplyTouchControls(); }
 
-    // ---- Apply cheatsEnabled: hide cheat button if disabled ----
     const cheatBtn = document.querySelector('.touch-control.cheat');
     if (cheatBtn) {
         cheatBtn.style.display = cheatsEnabled ? 'block' : 'none';
+        cheatBtn.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (typeof window.openCheatPopup === 'function') {
+                window.openCheatPopup();
+            }
+        }, { passive: false });
     }
 
     if (typeof AudioContext !== 'undefined') {
@@ -269,7 +145,7 @@ function startGame() {
         const canvasEl = document.getElementById('canvas');
         if (canvasEl) {
             canvasEl.style.touchAction = 'none';
-            canvasEl.style.pointerEvents = 'auto';
+            canvasEl.style.pointerEvents = isTouch ? 'none' : 'auto';
             if (isTouch) {
                 setTimeout(reapplyTouchControls, 50);
             }
@@ -283,9 +159,7 @@ function startGame() {
     document.addEventListener('webkitfullscreenchange', onFullscreenChange);
     document.addEventListener('mozfullscreenchange', onFullscreenChange);
 
-    window._fullscreenHandlers = { onFullscreenChange };
-
-    waitForFileSelection().then(files => {
+    window._fileLoaderReady.then(files => {
         const dataBuffer = files.data;
         const wasmBuffer = files.wasm;
         if (spinnerElement) spinnerElement.hidden = true;
@@ -299,10 +173,9 @@ function startGame() {
     });
 }
 
-// ------------------------------------------------------------------
-// 5. LOAD GAME (Emscripten Module)
-// ------------------------------------------------------------------
-
+// ============================================================
+// LOAD GAME (Emscripten Module)
+// ============================================================
 window.gameReady = false;
 
 async function loadGame(data, wasmBuffer) {
@@ -384,73 +257,117 @@ async function loadGame(data, wasmBuffer) {
         if (isTouch && showTouchControls) { wrapper.style.display = 'block'; }
         else { wrapper.style.display = 'none'; }
     }
+
+    // ============================================================
+    //  CONTROL SETUP (inline)
+    // ============================================================
     if (isTouch) {
         const canvasEl = document.getElementById('canvas');
         if (canvasEl) {
             canvasEl.style.touchAction = 'none';
-            canvasEl.style.pointerEvents = 'auto';
+            canvasEl.style.pointerEvents = 'none';
         }
 
         const emulator = new GamepadEmulator();
         window._emulator = emulator;
         emulator.AddEmulatedGamepad(0, true);
 
-        const $ = (sel) => document.querySelector(sel);
+        // ------------------------------------------------------------
+        //  MOVE JOYSTICK
+        // ------------------------------------------------------------
+        const moveEl = document.getElementById('move');
+        if (moveEl) {
+            moveEl.style.position = 'fixed';
+            moveEl.style.left = '5vw';
+            moveEl.style.bottom = '5vh';
+            moveEl.style.width = '25vmin';
+            moveEl.style.height = '25vmin';
+            moveEl.style.top = 'auto';
+            moveEl.style.right = 'auto';
+            moveEl.style.border = '2px solid rgba(13,240,255,0.6)';
+            moveEl.style.borderRadius = '50%';
+            moveEl.style.background = 'rgba(13,240,255,0.08)';
+            moveEl.style.backdropFilter = 'blur(10px)';
+            moveEl.style.webkitBackdropFilter = 'blur(10px)';
+            moveEl.style.zIndex = '9000';
 
-        function setupJoystick(element, xAxis, yAxis, invertY = true) {
-            if (!element) return;
+            const knob = document.createElement('div');
+            knob.className = 'move-joystick-knob';
+            knob.style.cssText = `
+                width: 30%;
+                height: 30%;
+                background: rgba(13,240,255,0.35);
+                border: 2px solid #0df0ff;
+                border-radius: 50%;
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                pointer-events: none;
+                box-shadow: 0 0 15px rgba(13,240,255,0.5);
+                z-index: 10;
+            `;
+            moveEl.appendChild(knob);
+
             let activeTouchId = null;
-            const maxDist = 100;
+            const maxDist = moveEl.offsetWidth * 0.35;
 
-            const getCenter = (el) => {
-                const rect = el.getBoundingClientRect();
+            const getCenter = () => {
+                const rect = moveEl.getBoundingClientRect();
                 return { cx: rect.left + rect.width / 2, cy: rect.top + rect.height / 2 };
             };
 
-            const updateAxes = (clientX, clientY, center) => {
+            const updateMoveAxes = (clientX, clientY, center) => {
                 let dx = clientX - center.cx;
                 let dy = clientY - center.cy;
                 const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 8) {
+                    emulator.MoveAxis(0, 0, 0);
+                    emulator.MoveAxis(0, 1, 0);
+                    knob.style.transform = 'translate(-50%, -50%)';
+                    return;
+                }
                 if (dist > maxDist) {
                     dx = (dx / dist) * maxDist;
                     dy = (dy / dist) * maxDist;
                 }
-                let normX = dx / maxDist;
-                let normY = dy / maxDist;
-                normX = Math.min(1, Math.max(-1, normX));
-                normY = Math.min(1, Math.max(-1, normY));
-                emulator.MoveAxis(0, xAxis, normX);
-                emulator.MoveAxis(0, yAxis, invertY ? -normY : normY);
+                const normX = dx / maxDist;
+                const normY = dy / maxDist;
+                const clampedX = Math.min(1, Math.max(-1, normX));
+                const clampedY = Math.min(1, Math.max(-1, normY));
+
+                knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+
+                emulator.MoveAxis(0, 0, clampedX);
+                emulator.MoveAxis(0, 1, clampedY);   // forward
             };
 
-            const resetAxes = () => {
-                emulator.MoveAxis(0, xAxis, 0);
-                emulator.MoveAxis(0, yAxis, 0);
+            const resetMove = () => {
+                emulator.MoveAxis(0, 0, 0);
+                emulator.MoveAxis(0, 1, 0);
+                knob.style.transform = 'translate(-50%, -50%)';
             };
 
-            element.addEventListener('touchstart', (e) => {
+            moveEl.addEventListener('touchstart', (e) => {
                 e.preventDefault();
-                if (activeTouchId !== null) return;
+                e.stopPropagation();
                 const touch = e.changedTouches[0];
                 activeTouchId = touch.identifier;
-                const center = getCenter(element);
-                updateAxes(touch.clientX, touch.clientY, center);
+                updateMoveAxes(touch.clientX, touch.clientY, getCenter());
 
                 const onMove = (ev) => {
                     ev.preventDefault();
                     for (let t of ev.changedTouches) {
                         if (t.identifier === activeTouchId) {
-                            const centerNow = getCenter(element);
-                            updateAxes(t.clientX, t.clientY, centerNow);
+                            updateMoveAxes(t.clientX, t.clientY, getCenter());
                         }
                     }
                 };
-
                 const onEnd = (ev) => {
                     ev.preventDefault();
                     for (let t of ev.changedTouches) {
                         if (t.identifier === activeTouchId) {
-                            resetAxes();
+                            resetMove();
                             activeTouchId = null;
                             document.removeEventListener('touchmove', onMove);
                             document.removeEventListener('touchend', onEnd);
@@ -458,25 +375,142 @@ async function loadGame(data, wasmBuffer) {
                         }
                     }
                 };
-
                 document.addEventListener('touchmove', onMove, { passive: false });
                 document.addEventListener('touchend', onEnd, { passive: false });
                 document.addEventListener('touchcancel', onEnd, { passive: false });
             }, { passive: false });
 
-            element.addEventListener('touchcancel', () => {
+            moveEl.addEventListener('touchcancel', () => {
                 if (activeTouchId !== null) {
-                    resetAxes();
+                    resetMove();
                     activeTouchId = null;
                 }
             }, { passive: true });
         }
 
-        const moveEl = document.getElementById('move');
+        // ------------------------------------------------------------
+        //  LOOK AREA
+        // ------------------------------------------------------------
         const lookEl = document.getElementById('look');
-        if (moveEl) setupJoystick(moveEl, 0, 1, true);
-        if (lookEl) setupJoystick(lookEl, 2, 3, true);
+        if (lookEl) {
+            lookEl.style.setProperty('pointer-events', 'auto', 'important');
+            lookEl.style.setProperty('touch-action', 'none', 'important');
+            lookEl.style.zIndex = '2147483647';
+            lookEl.style.position = 'fixed';
+            lookEl.style.top = '30vh';           // user-adjusted
+            lookEl.style.right = '15vw';
+            lookEl.style.width = '50vw';
+            lookEl.style.height = '25vh';
+            lookEl.style.bottom = 'auto';
+            lookEl.style.left = 'auto';
+            lookEl.style.border = '1px solid rgba(255,255,255,0.3)';
+            lookEl.style.borderRadius = '8px';
+            lookEl.style.background = 'rgba(255,255,255,0.05)';
 
+            const knob = document.createElement('div');
+            knob.className = 'look-joystick-knob';
+            knob.style.cssText = `
+                width: 30%;
+                height: 30%;
+                background: rgba(255,255,255,0.25);
+                border: 1px solid rgba(255,255,255,0.5);
+                border-radius: 50%;
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                pointer-events: none;
+                z-index: 10;
+            `;
+            lookEl.appendChild(knob);
+
+            let activeTouchId = null;
+
+            const getCenter = (el) => {
+                const rect = el.getBoundingClientRect();
+                return { cx: rect.left + rect.width / 2, cy: rect.top + rect.height / 2 };
+            };
+
+            const getMaxDist = (el) => {
+                const rect = el.getBoundingClientRect();
+                return Math.min(rect.width, rect.height) * 0.35;
+            };
+
+            let currentMaxDist = getMaxDist(lookEl);
+
+            const updateLookAxes = (clientX, clientY, center) => {
+                let dx = clientX - center.cx;
+                let dy = clientY - center.cy;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 8) {
+                    emulator.MoveAxis(0, 2, 0);
+                    emulator.MoveAxis(0, 3, 0);
+                    knob.style.transform = 'translate(-50%, -50%)';
+                    return;
+                }
+                if (dist > currentMaxDist) {
+                    dx = (dx / dist) * currentMaxDist;
+                    dy = (dy / dist) * currentMaxDist;
+                }
+                const normX = dx / currentMaxDist;
+                const normY = dy / currentMaxDist;
+                const clampedX = Math.min(1, Math.max(-1, normX));
+                const clampedY = Math.min(1, Math.max(-1, normY));
+
+                knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+
+                emulator.MoveAxis(0, 2, clampedX);
+                emulator.MoveAxis(0, 3, clampedY);   // ✅ UP = look up
+            };
+
+            const resetLook = () => {
+                emulator.MoveAxis(0, 2, 0);
+                emulator.MoveAxis(0, 3, 0);
+                knob.style.transform = 'translate(-50%, -50%)';
+            };
+
+            lookEl.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                currentMaxDist = getMaxDist(lookEl);
+                const touch = e.changedTouches[0];
+                activeTouchId = touch.identifier;
+                updateLookAxes(touch.clientX, touch.clientY, getCenter(lookEl));
+
+                const onMove = (ev) => {
+                    ev.preventDefault();
+                    for (let t of ev.changedTouches) {
+                        if (t.identifier === activeTouchId) {
+                            updateLookAxes(t.clientX, t.clientY, getCenter(lookEl));
+                        }
+                    }
+                };
+                const onEnd = (ev) => {
+                    ev.preventDefault();
+                    for (let t of ev.changedTouches) {
+                        if (t.identifier === activeTouchId) {
+                            resetLook();
+                            activeTouchId = null;
+                            document.removeEventListener('touchmove', onMove);
+                            document.removeEventListener('touchend', onEnd);
+                            document.removeEventListener('touchcancel', onEnd);
+                        }
+                    }
+                };
+                document.addEventListener('touchmove', onMove, { passive: false });
+                document.addEventListener('touchend', onEnd, { passive: false });
+                document.addEventListener('touchcancel', onEnd, { passive: false });
+            }, { passive: false });
+
+            lookEl.addEventListener('touchcancel', () => {
+                if (activeTouchId !== null) {
+                    resetLook();
+                    activeTouchId = null;
+                }
+            }, { passive: true });
+        }
+
+        // ---- BUTTONS ----
         function setupButton(selector, buttonIndex) {
             const el = document.querySelector(selector);
             if (!el) return;
@@ -493,10 +527,6 @@ async function loadGame(data, wasmBuffer) {
             el.addEventListener('touchstart', press, { passive: false });
             el.addEventListener('touchend', release, { passive: false });
             el.addEventListener('touchcancel', release, { passive: true });
-
-            el.addEventListener('mousedown', press);
-            el.addEventListener('mouseup', release);
-            el.addEventListener('mouseleave', release);
         }
 
         setupButton('.touch-control.menu', 9);
@@ -513,8 +543,17 @@ async function loadGame(data, wasmBuffer) {
         setupButton('.touch-control.horn', 10);
         setupButton('.touch-control.fireRight', 7);
         setupButton('.touch-control.fireLeft', 6);
-        setupButton('.touch-control.down', 13);
-        setupButton('.touch-control.back', 3);
+        setupButton('.touch-control.back', 3);    // back = 3 (shared with car.getIn)
+
+        // ---- HOME BUTTON – redirect to index.html ----
+        const homeBtn = document.querySelector('.touch-control.home');
+        if (homeBtn) {
+            homeBtn.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                window.location.href = 'index.html';
+            }, { passive: false });
+        }
 
         console.log('✅ Universal touch controls initialized.');
 
@@ -524,6 +563,14 @@ async function loadGame(data, wasmBuffer) {
         });
         menuObserver.observe(document.body, { attributes: true, attributeFilter: ['data-state-menu'] });
         setMenuModeActive(document.body.dataset.stateMenu === '1');
+    } else {
+        // Desktop mode
+        const canvas = document.getElementById('canvas');
+        if (canvas) {
+            canvas.style.pointerEvents = 'auto';
+            canvas.style.touchAction = 'auto';
+        }
+        console.log('🖱️ Desktop controls ready.');
     }
 
     const script = document.createElement('script');
@@ -533,19 +580,15 @@ async function loadGame(data, wasmBuffer) {
     setStatus("");
 }
 
-// ------------------------------------------------------------------
-// 6. CHEAT FUNCTIONS & GAME API (with cheatsEnabled check)
-// ------------------------------------------------------------------
-
+// ============================================================
+// CHEAT FUNCTIONS & GAME API
+// ============================================================
 const revc_iniDefault = `…`;
 const revc_ini = (() => {
     const cached = localStorage.getItem('vcsky.revc.ini');
     return cached || revc_iniDefault;
 })();
 
-// ============================================================
-// MODIFIED: typeCheat now respects cheatsEnabled
-// ============================================================
 window.typeCheat = async function(code) {
     if (!cheatsEnabled) {
         console.warn('Cheats are disabled.');
@@ -599,7 +642,6 @@ window.typeCheat = async function(code) {
     _free(eventDataPtr);
 };
 
-// ----- Other cheat functions (addMoney, toggleGodMode, etc.) remain unchanged -----
 window._scanMemory = function(value, type) {
     const results = [];
     const view = new DataView(HEAPU8.buffer);
@@ -690,9 +732,81 @@ window.toggleGodMode = function(enable) {
 };
 
 let airbreakEnabled = false;
+let airbreakInterval = null;
+
+const keysPressed = { w: false, s: false, a: false, d: false, space: false, shift: false };
+
+function airbreakLoop() {
+    if (!airbreakEnabled) return;
+    try {
+        const view = new DataView(HEAPU8.buffer);
+        const bufLen = view.buffer.byteLength;
+
+        const pedPtrAddr = 0x361c50 - 0xA0;
+        if (pedPtrAddr >= bufLen - 4) return;
+        const pedAddr = view.getInt32(pedPtrAddr, true);
+        if (pedAddr <= 0 || pedAddr >= bufLen - 0x400) return;
+
+        const posAddr = pedAddr + 0x34;
+        const healthAddr = pedAddr + 0x350;
+        const speedAddr = pedAddr + 0x74;
+
+        let x = view.getFloat32(posAddr, true);
+        let y = view.getFloat32(posAddr + 4, true);
+        let z = view.getFloat32(posAddr + 8, true);
+
+        let heading = 0;
+        try {
+            heading = view.getFloat32(pedAddr + 0x24, true);
+        } catch(e) {}
+
+        const speed = parseFloat(localStorage.getItem('cheat-fly-speed')) || 2.0;
+
+        let moved = false;
+        if (heading) {
+            const sinH = Math.sin(heading);
+            const cosH = Math.cos(heading);
+            if (keysPressed.w) { x += sinH * speed; y += cosH * speed; moved = true; }
+            if (keysPressed.s) { x -= sinH * speed; y -= cosH * speed; moved = true; }
+            if (keysPressed.a) { x -= cosH * speed; y += sinH * speed; moved = true; }
+            if (keysPressed.d) { x += cosH * speed; y -= sinH * speed; moved = true; }
+        } else {
+            if (keysPressed.w) { x += speed; moved = true; }
+            if (keysPressed.s) { x -= speed; moved = true; }
+            if (keysPressed.a) { y += speed; moved = true; }
+            if (keysPressed.d) { y -= speed; moved = true; }
+        }
+        if (keysPressed.space) { z += speed; moved = true; }
+        if (keysPressed.shift) { z -= speed; moved = true; }
+
+        if (moved) {
+            view.setFloat32(posAddr, x, true);
+            view.setFloat32(posAddr + 4, y, true);
+            view.setFloat32(posAddr + 8, z, true);
+            view.setFloat32(healthAddr, 999.0, true);
+            view.setFloat32(speedAddr, 0, true);
+            view.setFloat32(speedAddr + 4, 0, true);
+            view.setFloat32(speedAddr + 8, 0, true);
+        }
+    } catch(e) {}
+}
+
 window.toggleAirBrake = function(enable) {
     if (enable !== undefined) airbreakEnabled = enable;
     else airbreakEnabled = !airbreakEnabled;
+
+    if (airbreakEnabled) {
+        if (!airbreakInterval) {
+            airbreakInterval = setInterval(airbreakLoop, 16);
+        }
+    } else {
+        if (airbreakInterval) {
+            clearInterval(airbreakInterval);
+            airbreakInterval = null;
+        }
+        keysPressed.w = keysPressed.s = keysPressed.a = keysPressed.d = false;
+        keysPressed.space = keysPressed.shift = false;
+    }
     if (typeof window._updateAirBreakUI === 'function') {
         window._updateAirBreakUI(airbreakEnabled);
     }
@@ -812,10 +926,9 @@ window.__gameApi = {
 window.setMenuModeActive = setMenuModeActive;
 window.reapplyTouchControls = reapplyTouchControls;
 
-// ------------------------------------------------------------------
-// 7. AIRBREAK CONTROLS (unchanged)
-// ------------------------------------------------------------------
-
+// ============================================================
+// AIRBREAK CONTROLS – touch / desktop strictly separated
+// ============================================================
 (function() {
     const overlay = document.getElementById('airbreak-overlay');
     const joystick = document.getElementById('airbreak-joystick');
@@ -825,20 +938,22 @@ window.reapplyTouchControls = reapplyTouchControls;
     const downBtn = document.getElementById('airbreak-down-btn');
     const flyToggleBtn = document.getElementById('airbreak-toggle-fly');
 
-    if (overlay) { overlay.style.touchAction = 'none'; overlay.style.pointerEvents = 'auto'; }
-    if (joystick) { joystick.style.touchAction = 'none'; joystick.style.pointerEvents = 'auto'; }
-    if (knob) { knob.style.touchAction = 'none'; knob.style.pointerEvents = 'auto'; }
-    if (verticalBtns) { verticalBtns.style.touchAction = 'none'; verticalBtns.style.pointerEvents = 'auto'; }
-    if (upBtn) { upBtn.style.touchAction = 'none'; upBtn.style.pointerEvents = 'auto'; }
-    if (downBtn) { downBtn.style.touchAction = 'none'; downBtn.style.pointerEvents = 'auto'; }
-    if (flyToggleBtn) { flyToggleBtn.style.touchAction = 'none'; flyToggleBtn.style.pointerEvents = 'auto'; }
+    const setElementInteraction = (el) => {
+        if (!el) return;
+        if (isTouch) {
+            el.style.touchAction = 'none';
+            el.style.pointerEvents = 'auto';
+        } else {
+            el.style.touchAction = 'auto';
+            el.style.pointerEvents = 'auto';
+        }
+    };
+    [overlay, joystick, knob, verticalBtns, upBtn, downBtn, flyToggleBtn].forEach(setElementInteraction);
 
-    let airbreakEnabled = false;
     let joystickActive = false;
     let joystickCenterX = 0, joystickCenterY = 0;
     const joystickRadius = 60;
     const deadzone = 15;
-    let keysPressed = { w: false, s: false, a: false, d: false, space: false, shift: false };
     let activePointerId = null;
     let activeTouchId = null;
 
@@ -846,7 +961,7 @@ window.reapplyTouchControls = reapplyTouchControls;
     let flyBtnStartX = 0, flyBtnStartY = 0;
     let flyBtnInitialRight = 0, flyBtnInitialBottom = 0;
     const savedFlyPos = localStorage.getItem('cheat-fly-pos');
-    if (savedFlyPos) {
+    if (savedFlyPos && flyToggleBtn) {
         try {
             const pos = JSON.parse(savedFlyPos);
             flyToggleBtn.style.right = pos.right + 'px';
@@ -876,13 +991,6 @@ window.reapplyTouchControls = reapplyTouchControls;
     }
     window._updateAirBreakUI = updateAirBreakUI;
 
-    window.toggleAirBrake = function(enable) {
-        if (enable !== undefined) airbreakEnabled = enable;
-        else airbreakEnabled = !airbreakEnabled;
-        updateAirBreakUI(airbreakEnabled);
-        console.log('AirBreak:', airbreakEnabled ? 'ON' : 'OFF');
-    };
-
     function handleJoystickMove(clientX, clientY) {
         if (!joystickActive) return;
         let deltaX = clientX - joystickCenterX;
@@ -909,7 +1017,7 @@ window.reapplyTouchControls = reapplyTouchControls;
         const rect = joystick.getBoundingClientRect();
         joystickCenterX = rect.left + rect.width / 2;
         joystickCenterY = rect.top + rect.height / 2;
-        if (pointerId !== undefined && pointerId !== null) {
+        if (!isTouch && pointerId !== undefined && pointerId !== null) {
             try { joystick.setPointerCapture(pointerId); } catch(e) {}
         }
         handleJoystickMove(clientX, clientY);
@@ -917,6 +1025,9 @@ window.reapplyTouchControls = reapplyTouchControls;
 
     function joystickEnd() {
         joystickActive = false;
+        if (!isTouch && activePointerId !== null) {
+            try { joystick.releasePointerCapture(activePointerId); } catch(e) {}
+        }
         activePointerId = null;
         activeTouchId = null;
         if (knob) knob.style.transform = 'translate(-50%, -50%)';
@@ -927,161 +1038,162 @@ window.reapplyTouchControls = reapplyTouchControls;
     }
 
     if (joystick) {
-        joystick.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); joystickStart(e.clientX, e.clientY, e.pointerId, null); });
-        joystick.addEventListener('pointermove', (e) => { if (joystickActive && activePointerId === e.pointerId) { e.preventDefault(); handleJoystickMove(e.clientX, e.clientY); } });
-        joystick.addEventListener('pointerup', (e) => { if (activePointerId === e.pointerId) { e.preventDefault(); joystickEnd(); try { joystick.releasePointerCapture(e.pointerId); } catch(e) {} } });
-        joystick.addEventListener('pointercancel', () => joystickEnd());
-
-        joystick.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); const t = e.changedTouches[0]; if (t) joystickStart(t.clientX, t.clientY, null, t.identifier); }, { passive: false });
-        joystick.addEventListener('touchmove', (e) => { if (!joystickActive) return; e.preventDefault(); const t = e.changedTouches[0]; if (t && activeTouchId === t.identifier) handleJoystickMove(t.clientX, t.clientY); }, { passive: false });
-        joystick.addEventListener('touchend', (e) => { e.preventDefault(); joystickEnd(); }, { passive: false });
-        joystick.addEventListener('touchcancel', () => joystickEnd(), { passive: false });
-    }
-
-    function setupButton(btn, key) {
-        if (!btn) return;
-        btn.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); if (airbreakEnabled) keysPressed[key] = true; });
-        btn.addEventListener('pointerup', (e) => { e.preventDefault(); keysPressed[key] = false; });
-        btn.addEventListener('pointercancel', () => { keysPressed[key] = false; });
-        btn.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); if (airbreakEnabled) keysPressed[key] = true; }, { passive: false });
-        btn.addEventListener('touchend', (e) => { e.preventDefault(); keysPressed[key] = false; }, { passive: false });
-        btn.addEventListener('touchcancel', () => { keysPressed[key] = false; });
-    }
-    setupButton(upBtn, 'space');
-    setupButton(downBtn, 'shift');
-
-    if (flyToggleBtn) {
-        flyToggleBtn.addEventListener('pointerdown', (e) => {
-            e.preventDefault(); e.stopPropagation();
-            flyBtnDragging = false;
-            flyBtnStartX = e.clientX; flyBtnStartY = e.clientY;
-            const rect = flyToggleBtn.getBoundingClientRect();
-            flyBtnInitialRight = window.innerWidth - rect.right;
-            flyBtnInitialBottom = window.innerHeight - rect.bottom;
-        });
-        flyToggleBtn.addEventListener('pointermove', (e) => {
-            const dx = e.clientX - flyBtnStartX, dy = e.clientY - flyBtnStartY;
-            if (Math.abs(dx) > 10 || Math.abs(dy) > 10) flyBtnDragging = true;
-            if (flyBtnDragging && e.buttons === 1) {
-                let newRight = flyBtnInitialRight - dx;
-                let newBottom = flyBtnInitialBottom - dy;
-                const bw = flyToggleBtn.offsetWidth, bh = flyToggleBtn.offsetHeight;
-                newRight = Math.max(0, Math.min(window.innerWidth - bw, newRight));
-                newBottom = Math.max(0, Math.min(window.innerHeight - bh, newBottom));
-                flyToggleBtn.style.right = newRight + 'px';
-                flyToggleBtn.style.bottom = newBottom + 'px';
-            }
-        });
-        flyToggleBtn.addEventListener('pointerup', (e) => {
-            e.preventDefault();
-            if (flyBtnDragging) {
-                const rect = flyToggleBtn.getBoundingClientRect();
-                localStorage.setItem('cheat-fly-pos', JSON.stringify({
-                    right: window.innerWidth - rect.right,
-                    bottom: window.innerHeight - rect.bottom
-                }));
-            } else {
-                window.toggleAirBrake();
-            }
-            flyBtnDragging = false;
-        });
-        flyToggleBtn.addEventListener('pointercancel', () => { flyBtnDragging = false; });
-
-        flyToggleBtn.addEventListener('touchstart', (e) => {
-            e.preventDefault(); e.stopPropagation();
-            flyBtnDragging = false;
-            const t = e.changedTouches[0];
-            flyBtnStartX = t.clientX; flyBtnStartY = t.clientY;
-            const rect = flyToggleBtn.getBoundingClientRect();
-            flyBtnInitialRight = window.innerWidth - rect.right;
-            flyBtnInitialBottom = window.innerHeight - rect.bottom;
-        }, { passive: false });
-        flyToggleBtn.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-            const t = e.changedTouches[0];
-            const dx = t.clientX - flyBtnStartX, dy = t.clientY - flyBtnStartY;
-            if (Math.abs(dx) > 10 || Math.abs(dy) > 10) flyBtnDragging = true;
-            if (flyBtnDragging) {
-                let newRight = flyBtnInitialRight - dx;
-                let newBottom = flyBtnInitialBottom - dy;
-                const bw = flyToggleBtn.offsetWidth, bh = flyToggleBtn.offsetHeight;
-                newRight = Math.max(0, Math.min(window.innerWidth - bw, newRight));
-                newBottom = Math.max(0, Math.min(window.innerHeight - bh, newBottom));
-                flyToggleBtn.style.right = newRight + 'px';
-                flyToggleBtn.style.bottom = newBottom + 'px';
-            }
-        }, { passive: false });
-        flyToggleBtn.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            if (flyBtnDragging) {
-                const rect = flyToggleBtn.getBoundingClientRect();
-                localStorage.setItem('cheat-fly-pos', JSON.stringify({
-                    right: window.innerWidth - rect.right,
-                    bottom: window.innerHeight - rect.bottom
-                }));
-            } else {
-                window.toggleAirBrake();
-            }
-            flyBtnDragging = false;
-        }, { passive: false });
-    }
-
-    let airbreakLoop = null;
-    function startAirbreakLoop() {
-        if (airbreakLoop) return;
-        airbreakLoop = setInterval(() => {
-            if (!airbreakEnabled) return;
-            try {
-                if (typeof HEAPU8 === 'undefined' || !HEAPU8.buffer) return;
-                const view = new DataView(HEAPU8.buffer);
-                const bufLen = view.buffer.byteLength;
-                const healthAddr = 0x361c50 - 0xA0 + 0x350;
-                const positionAddr = 0x361c50 - 0xA0 + 0x04 + 0x34;
-                const headingAddr = 0x361c50 - 0xA0 + 0x350 + 0x24;
-                const moveSpeedAddr = 0x361c50 - 0xA0 + 0x74;
-                if (positionAddr >= bufLen - 12) return;
-                let x = view.getFloat32(positionAddr, true);
-                let y = view.getFloat32(positionAddr + 4, true);
-                let z = view.getFloat32(positionAddr + 8, true);
-                const headingRaw = view.getFloat32(headingAddr, true);
-                const heading = -headingRaw;
-                const speed = parseFloat(localStorage.getItem('cheat-fly-speed')) || 2.0;
-                const sinH = Math.sin(heading), cosH = Math.cos(heading);
-                let moved = false;
-                if (keysPressed.w) { x += sinH * speed; y += cosH * speed; moved = true; }
-                if (keysPressed.s) { x -= sinH * speed; y -= cosH * speed; moved = true; }
-                if (keysPressed.a) { x -= cosH * speed; y += sinH * speed; moved = true; }
-                if (keysPressed.d) { x += cosH * speed; y -= sinH * speed; moved = true; }
-                if (keysPressed.space) { z += speed; moved = true; }
-                if (keysPressed.shift) { z -= speed; moved = true; }
-                if (moved) {
-                    view.setFloat32(positionAddr, x, true);
-                    view.setFloat32(positionAddr + 4, y, true);
-                    view.setFloat32(positionAddr + 8, z, true);
-                    view.setFloat32(healthAddr, 999.0, true);
-                    view.setFloat32(moveSpeedAddr, 0, true);
-                    view.setFloat32(moveSpeedAddr + 4, 0, true);
-                    view.setFloat32(moveSpeedAddr + 8, 0, true);
-                }
-            } catch(e) {}
-        }, 16);
-    }
-    function waitForModule() {
-        if (typeof Module !== 'undefined' && Module && Module.canvas) {
-            startAirbreakLoop();
+        if (isTouch) {
+            joystick.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const t = e.changedTouches[0];
+                if (t) joystickStart(t.clientX, t.clientY, null, t.identifier);
+            }, { passive: false });
+            joystick.addEventListener('touchmove', (e) => {
+                if (!joystickActive) return;
+                e.preventDefault();
+                const t = e.changedTouches[0];
+                if (t && activeTouchId === t.identifier) handleJoystickMove(t.clientX, t.clientY);
+            }, { passive: false });
+            joystick.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                joystickEnd();
+            }, { passive: false });
+            joystick.addEventListener('touchcancel', () => joystickEnd(), { passive: false });
         } else {
-            setTimeout(waitForModule, 500);
+            joystick.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                joystickStart(e.clientX, e.clientY, e.pointerId, null);
+            });
+            joystick.addEventListener('pointermove', (e) => {
+                if (joystickActive && activePointerId === e.pointerId) {
+                    e.preventDefault();
+                    handleJoystickMove(e.clientX, e.clientY);
+                }
+            });
+            joystick.addEventListener('pointerup', (e) => {
+                if (activePointerId === e.pointerId) {
+                    e.preventDefault();
+                    joystickEnd();
+                }
+            });
+            joystick.addEventListener('pointercancel', () => joystickEnd());
         }
     }
-    waitForModule();
-    window.stopAirbreakLoop = () => { if (airbreakLoop) { clearInterval(airbreakLoop); airbreakLoop = null; } };
-    updateAirBreakUI(false);
-    console.log('✈️ AirBreak controls loaded (touch + pointer).');
-})();
 
-// ------------------------------------------------------------------
-// 8. START THE GAME
-// ------------------------------------------------------------------
+    function setupAirButton(btn, key) {
+        if (!btn) return;
+        if (isTouch) {
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (airbreakEnabled) keysPressed[key] = true;
+            }, { passive: false });
+            btn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                keysPressed[key] = false;
+            }, { passive: false });
+            btn.addEventListener('touchcancel', () => { keysPressed[key] = false; });
+        } else {
+            btn.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (airbreakEnabled) keysPressed[key] = true;
+            });
+            btn.addEventListener('pointerup', (e) => {
+                e.preventDefault();
+                keysPressed[key] = false;
+            });
+            btn.addEventListener('pointercancel', () => { keysPressed[key] = false; });
+        }
+    }
+    setupAirButton(upBtn, 'space');
+    setupAirButton(downBtn, 'shift');
+
+    if (flyToggleBtn) {
+        if (isTouch) {
+            flyToggleBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                flyBtnDragging = false;
+                const t = e.changedTouches[0];
+                flyBtnStartX = t.clientX;
+                flyBtnStartY = t.clientY;
+                const rect = flyToggleBtn.getBoundingClientRect();
+                flyBtnInitialRight = window.innerWidth - rect.right;
+                flyBtnInitialBottom = window.innerHeight - rect.bottom;
+            }, { passive: false });
+            flyToggleBtn.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                const t = e.changedTouches[0];
+                const dx = t.clientX - flyBtnStartX;
+                const dy = t.clientY - flyBtnStartY;
+                if (Math.abs(dx) > 10 || Math.abs(dy) > 10) flyBtnDragging = true;
+                if (flyBtnDragging) {
+                    let newRight = flyBtnInitialRight - dx;
+                    let newBottom = flyBtnInitialBottom - dy;
+                    const bw = flyToggleBtn.offsetWidth, bh = flyToggleBtn.offsetHeight;
+                    newRight = Math.max(0, Math.min(window.innerWidth - bw, newRight));
+                    newBottom = Math.max(0, Math.min(window.innerHeight - bh, newBottom));
+                    flyToggleBtn.style.right = newRight + 'px';
+                    flyToggleBtn.style.bottom = newBottom + 'px';
+                }
+            }, { passive: false });
+            flyToggleBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                if (flyBtnDragging) {
+                    const rect = flyToggleBtn.getBoundingClientRect();
+                    localStorage.setItem('cheat-fly-pos', JSON.stringify({
+                        right: window.innerWidth - rect.right,
+                        bottom: window.innerHeight - rect.bottom
+                    }));
+                } else {
+                    window.toggleAirBrake();
+                }
+                flyBtnDragging = false;
+            }, { passive: false });
+        } else {
+            flyToggleBtn.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                flyBtnDragging = false;
+                flyBtnStartX = e.clientX;
+                flyBtnStartY = e.clientY;
+                const rect = flyToggleBtn.getBoundingClientRect();
+                flyBtnInitialRight = window.innerWidth - rect.right;
+                flyBtnInitialBottom = window.innerHeight - rect.bottom;
+            });
+            flyToggleBtn.addEventListener('pointermove', (e) => {
+                const dx = e.clientX - flyBtnStartX;
+                const dy = e.clientY - flyBtnStartY;
+                if (Math.abs(dx) > 10 || Math.abs(dy) > 10) flyBtnDragging = true;
+                if (flyBtnDragging && e.buttons === 1) {
+                    let newRight = flyBtnInitialRight - dx;
+                    let newBottom = flyBtnInitialBottom - dy;
+                    const bw = flyToggleBtn.offsetWidth, bh = flyToggleBtn.offsetHeight;
+                    newRight = Math.max(0, Math.min(window.innerWidth - bw, newRight));
+                    newBottom = Math.max(0, Math.min(window.innerHeight - bh, newBottom));
+                    flyToggleBtn.style.right = newRight + 'px';
+                    flyToggleBtn.style.bottom = newBottom + 'px';
+                }
+            });
+            flyToggleBtn.addEventListener('pointerup', (e) => {
+                e.preventDefault();
+                if (flyBtnDragging) {
+                    const rect = flyToggleBtn.getBoundingClientRect();
+                    localStorage.setItem('cheat-fly-pos', JSON.stringify({
+                        right: window.innerWidth - rect.right,
+                        bottom: window.innerHeight - rect.bottom
+                    }));
+                } else {
+                    window.toggleAirBrake();
+                }
+                flyBtnDragging = false;
+            });
+            flyToggleBtn.addEventListener('pointercancel', () => { flyBtnDragging = false; });
+        }
+    }
+
+    updateAirBreakUI(false);
+    console.log('✈️ AirBreak controls loaded (' + (isTouch ? 'touch' : 'desktop') + ').');
+})();
 
 setTimeout(startGame, 100);
 console.log('🎮 Game script loaded. Starting game...');
