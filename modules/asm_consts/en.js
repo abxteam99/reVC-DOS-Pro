@@ -150,7 +150,11 @@ var ASM_CONSTS = {
       }
       if (SDL2.audioContext) {
         if (typeof navigator.userActivation === "undefined") {
-          autoResumeAudioContext(SDL2.audioContext);
+          if (typeof autoResumeAudioContext !== "undefined") {
+            autoResumeAudioContext(SDL2.audioContext);
+          } else if (SDL2.audioContext.state === "suspended") {
+            SDL2.audioContext.resume();
+          }
         }
       }
     }
