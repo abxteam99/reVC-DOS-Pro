@@ -188,8 +188,7 @@ window.gameReady = false;
 async function loadGame(data, wasmBuffer) {
     // Disable pointer lock on touch devices permanently
     if (isTouch) {
-        delete HTMLCanvasElement.prototype.requestPointerLock;
-        delete document.exitPointerLock;
+        HTMLCanvasElement.prototype.requestPointerLock = function() {};
     }
 
     document.body.classList.add('gameIsStarted');
@@ -410,12 +409,12 @@ async function loadGame(data, wasmBuffer) {
             lookEl.style.setProperty('touch-action', 'none', 'important');
             lookEl.style.zIndex = '2147483647';
             lookEl.style.position = 'fixed';
-            lookEl.style.top = '30vh';
-            lookEl.style.right = '15vw';
-            lookEl.style.width = '50vw';
-            lookEl.style.height = '25vh';
+            lookEl.style.top = '30%';
+            lookEl.style.right = '3%';
+            lookEl.style.width = '30%';
+            lookEl.style.height = '30%';
             lookEl.style.bottom = 'auto';
-            lookEl.style.left = 'auto';
+            lookEl.style.left = '65%';
             lookEl.style.border = '1px solid rgba(255,255,255,0.3)';
             lookEl.style.borderRadius = '8px';
             lookEl.style.background = 'rgba(255,255,255,0.05)';
@@ -473,7 +472,7 @@ async function loadGame(data, wasmBuffer) {
                 knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
 
                 emulator.MoveAxis(0, 2, clampedX);
-                emulator.MoveAxis(0, 3, clampedY);   // ✅ up = look up
+                emulator.MoveAxis(0, 3, clampedY);
             };
 
             const resetLook = () => {
@@ -556,7 +555,7 @@ async function loadGame(data, wasmBuffer) {
         setupButton('.touch-control.horn', 10);
         setupButton('.touch-control.fireRight', 7);
         setupButton('.touch-control.fireLeft', 6);
-        setupButton('.touch-control.back', 3);    // back shares index 3 (mutually exclusive with car.getIn)
+        setupButton('.touch-control.back', 3);
 
         // ---- HOME BUTTON – redirect to index.html ----
         const homeBtn = document.querySelector('.touch-control.home');

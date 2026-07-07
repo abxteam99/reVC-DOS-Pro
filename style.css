@@ -348,8 +348,7 @@ html, body {
     bottom: 5%;
     left: 80%;
     right: 10%;
-    transform: translateX(10%);
-    transform: translateY(-5%);
+    transform: translate(10%, -5%);
 }
 
 /* Back – bottom‑middle */
@@ -363,8 +362,7 @@ html, body {
     left: 60%;
     right: 10%;
     z-index: 100000 !important;
-    transform: translateX(10%);
-    transform: translateY(-5%);
+    transform: translate(10%, -5%);
 }
 
 /* Home – bottom‑left */
@@ -378,8 +376,7 @@ html, body {
     left: 40%;
     right: 10%;
     z-index: 10002;
-    transform: translateX(10%);
-    transform: translateY(-5%);
+    transform: translate(10%, -5%);
 }
 
 /* Debug button visible in menu too */
