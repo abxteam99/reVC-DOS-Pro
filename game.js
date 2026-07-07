@@ -164,9 +164,16 @@ function startGame() {
         const wasmBuffer = files.wasm;
         if (spinnerElement) spinnerElement.hidden = true;
         setStatus(t("clickToContinue"));
-        setTimeout(() => {
+
+        // Wait for user click/tap before loading the game
+        const clickHandler = () => {
             loadGame(dataBuffer, wasmBuffer);
-        }, 100);
+        };
+        if (isTouch) {
+            window.addEventListener('pointerup', clickHandler, { once: true });
+        } else {
+            window.addEventListener('click', clickHandler, { once: true });
+        }
     }).catch(err => {
         console.error('[Game] File selection error:', err);
         setStatus('Failed to load files: ' + err.message);
@@ -179,6 +186,12 @@ function startGame() {
 window.gameReady = false;
 
 async function loadGame(data, wasmBuffer) {
+    // Disable pointer lock on touch devices permanently
+    if (isTouch) {
+        delete HTMLCanvasElement.prototype.requestPointerLock;
+        delete document.exitPointerLock;
+    }
+
     document.body.classList.add('gameIsStarted');
     var Module = {
         mainCalled: () => {
@@ -278,10 +291,10 @@ async function loadGame(data, wasmBuffer) {
         const moveEl = document.getElementById('move');
         if (moveEl) {
             moveEl.style.position = 'fixed';
-            moveEl.style.left = '5vw';
-            moveEl.style.bottom = '5vh';
-            moveEl.style.width = '25vmin';
-            moveEl.style.height = '25vmin';
+            moveEl.style.left = '5%';
+            moveEl.style.bottom = '5%';
+            moveEl.style.width = '30vmin';
+            moveEl.style.height = '30vmin';
             moveEl.style.top = 'auto';
             moveEl.style.right = 'auto';
             moveEl.style.border = '2px solid rgba(13,240,255,0.6)';
@@ -389,7 +402,7 @@ async function loadGame(data, wasmBuffer) {
         }
 
         // ------------------------------------------------------------
-        //  LOOK AREA
+        //  LOOK AREA (portrait – user settings)
         // ------------------------------------------------------------
         const lookEl = document.getElementById('look');
         if (lookEl) {
@@ -397,7 +410,7 @@ async function loadGame(data, wasmBuffer) {
             lookEl.style.setProperty('touch-action', 'none', 'important');
             lookEl.style.zIndex = '2147483647';
             lookEl.style.position = 'fixed';
-            lookEl.style.top = '30vh';           // user-adjusted
+            lookEl.style.top = '30vh';
             lookEl.style.right = '15vw';
             lookEl.style.width = '50vw';
             lookEl.style.height = '25vh';
@@ -460,7 +473,7 @@ async function loadGame(data, wasmBuffer) {
                 knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
 
                 emulator.MoveAxis(0, 2, clampedX);
-                emulator.MoveAxis(0, 3, clampedY);   // ✅ UP = look up
+                emulator.MoveAxis(0, 3, clampedY);   // ✅ up = look up
             };
 
             const resetLook = () => {
@@ -543,7 +556,7 @@ async function loadGame(data, wasmBuffer) {
         setupButton('.touch-control.horn', 10);
         setupButton('.touch-control.fireRight', 7);
         setupButton('.touch-control.fireLeft', 6);
-        setupButton('.touch-control.back', 3);    // back = 3 (shared with car.getIn)
+        setupButton('.touch-control.back', 3);    // back shares index 3 (mutually exclusive with car.getIn)
 
         // ---- HOME BUTTON – redirect to index.html ----
         const homeBtn = document.querySelector('.touch-control.home');
@@ -564,7 +577,7 @@ async function loadGame(data, wasmBuffer) {
         menuObserver.observe(document.body, { attributes: true, attributeFilter: ['data-state-menu'] });
         setMenuModeActive(document.body.dataset.stateMenu === '1');
     } else {
-        // Desktop mode
+        // Desktop mode – pointer lock allowed
         const canvas = document.getElementById('canvas');
         if (canvas) {
             canvas.style.pointerEvents = 'auto';
@@ -581,7 +594,7 @@ async function loadGame(data, wasmBuffer) {
 }
 
 // ============================================================
-// CHEAT FUNCTIONS & GAME API
+// CHEAT FUNCTIONS & GAME API (with memory safety checks)
 // ============================================================
 const revc_iniDefault = `…`;
 const revc_ini = (() => {
@@ -704,7 +717,10 @@ window.addMoney = function() {
     const view = new DataView(HEAPU8.buffer);
     const bufLen = view.buffer.byteLength;
     const moneyAddr = 0x361c50;
-    if (moneyAddr >= bufLen - 4) { console.warn('Money address out of range'); return; }
+    if (moneyAddr < 0 || moneyAddr + 4 > bufLen) {
+        console.warn('Money address out of range');
+        return;
+    }
     try {
         const current = view.getInt32(moneyAddr, true);
         view.setInt32(moneyAddr, current + 9999999, true);
@@ -718,13 +734,12 @@ window.toggleGodMode = function(enable) {
     else godModeEnabled = !godModeEnabled;
     if (godModeEnabled) {
         const view = new DataView(HEAPU8.buffer);
+        const bufLen = view.buffer.byteLength;
         const pedPtrAddr = 0x361c50 - 0xA0;
-        if (pedPtrAddr < view.buffer.byteLength - 4) {
-            const pedAddr = view.getInt32(pedPtrAddr, true);
-            if (pedAddr > 0 && pedAddr < view.buffer.byteLength - 0x350) {
-                view.setFloat32(pedAddr + 0x350, 999.0, true);
-            }
-        }
+        if (pedPtrAddr < 0 || pedPtrAddr + 4 > bufLen) return;
+        const pedAddr = view.getInt32(pedPtrAddr, true);
+        if (pedAddr <= 0 || pedAddr + 0x350 > bufLen) return;
+        view.setFloat32(pedAddr + 0x350, 999.0, true);
         console.log('🛡️ GodMode ON');
     } else {
         console.log('🛡️ GodMode OFF');
@@ -743,22 +758,24 @@ function airbreakLoop() {
         const bufLen = view.buffer.byteLength;
 
         const pedPtrAddr = 0x361c50 - 0xA0;
-        if (pedPtrAddr >= bufLen - 4) return;
+        if (pedPtrAddr < 0 || pedPtrAddr + 4 > bufLen) return;
         const pedAddr = view.getInt32(pedPtrAddr, true);
-        if (pedAddr <= 0 || pedAddr >= bufLen - 0x400) return;
+        if (pedAddr <= 0 || pedAddr + 0x400 > bufLen) return;
 
         const posAddr = pedAddr + 0x34;
         const healthAddr = pedAddr + 0x350;
         const speedAddr = pedAddr + 0x74;
+
+        if (posAddr + 12 > bufLen || healthAddr + 4 > bufLen || speedAddr + 12 > bufLen) return;
 
         let x = view.getFloat32(posAddr, true);
         let y = view.getFloat32(posAddr + 4, true);
         let z = view.getFloat32(posAddr + 8, true);
 
         let heading = 0;
-        try {
-            heading = view.getFloat32(pedAddr + 0x24, true);
-        } catch(e) {}
+        if (pedAddr + 0x24 + 4 <= bufLen) {
+            try { heading = view.getFloat32(pedAddr + 0x24, true); } catch(e) {}
+        }
 
         const speed = parseFloat(localStorage.getItem('cheat-fly-speed')) || 2.0;
 
