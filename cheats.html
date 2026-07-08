@@ -1,836 +1,317 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-    <title>Cheat Engine</title>
-    <style>
-        :root {
-            --bg-dark: #07070d;
-            --bg-panel: #111122;
-            --bg-input: #1a1a30;
-            --color-text: #e2e8f0;
-            --color-muted: #8a99ad;
-            --accent-pink: #ff00ff;
-            --accent-cyan: #00ffff;
-            --accent-gold: #ffd700;
-            --accent-danger: #ff4444;
-            --border-color: #2a2a44;
-            --border-hover: #ff00ff88;
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Cheat Engine</title><style>:root{--bg-dark:#07070d;--bg-panel:#111122;--bg-input:#1a1a30;--color-text:#e2e8f0;--color-muted:#8a99ad;--accent-pink:#ff00ff;--accent-cyan:#00ffff;--accent-gold:#ffd700;--accent-danger:#ff4444;--border-color:#2a2a44;--border-hover:#ff00ff88;--radius-main:8px;--glow-pink:0 0 12px rgba(255,0,255,0.35);--glow-cyan:0 0 12px rgba(0,255,255,0.35)}*{box-sizing:border-box}body{margin:0;padding:0;background:var(--bg-dark);color:var(--color-text);font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;height:100vh;overflow:hidden;display:flex;flex-direction:column}#cheat-engine-ui{display:flex;flex-direction:column;height:100vh;width:100%;background:var(--bg-dark)}h1{font-size:15px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin:0;padding:14px 16px;background:var(--bg-panel);border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;text-shadow:0 0 10px rgba(226,232,240,0.2)}h1 button{background:transparent;border:none;color:var(--accent-danger);font-size:18px;cursor:pointer;touch-action:manipulation;transition:transform .2s,opacity .2s;display:flex;align-items:center;justify-content:center;padding:4px}h1 button:hover{transform:scale(1.15);opacity:.8}.ce-tabs{display:flex;border-bottom:1px solid var(--border-color);background:#0d0d18;flex-shrink:0}.ce-tabs button{flex:1;background:transparent;border:none;color:var(--color-muted);padding:14px 8px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;cursor:pointer;border-bottom:2px solid transparent;touch-action:manipulation;transition:all .2s ease}.ce-tabs button:hover{color:#fff;background:rgba(255,255,255,0.02)}.ce-tabs button.active{color:#fff;border-bottom-color:var(--accent-pink);background:var(--bg-panel);text-shadow:var(--glow-pink)}.ce-tab-content{display:none;padding:16px;flex:1;overflow-y:auto}.ce-tab-content.active{display:block}.ce-input-row{display:flex;gap:8px;margin-bottom:12px;align-items:center}.ce-input-row input,.ce-input-row select{background:var(--bg-input);border:1px solid var(--border-color);color:#fff;padding:10px 12px;font-size:13px;border-radius:var(--radius-main);flex:1;outline:0;transition:border-color .2s,box-shadow .2s}.ce-input-row input:focus,.ce-input-row select:focus{border-color:var(--accent-cyan);box-shadow:var(--glow-cyan)}.ce-input-row button{background:var(--bg-input);border:1px solid var(--border-color);color:#fff;padding:10px 16px;font-size:13px;font-weight:600;border-radius:var(--radius-main);cursor:pointer;transition:all .2s ease}.ce-input-row button:hover{border-color:var(--accent-cyan);box-shadow:var(--glow-cyan);background:rgba(0,255,255,0.08)}.ce-btn-row{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}.ce-btn-row button,.cheat-grid button{background:var(--bg-input);border:1px solid var(--border-color);color:#cbd5e1;padding:10px 6px;font-size:12px;font-weight:500;border-radius:var(--radius-main);cursor:pointer;touch-action:manipulation;transition:all .15s ease}.ce-btn-row button:hover,.cheat-grid button:hover{background:rgba(255,0,255,0.08);border-color:var(--border-hover);color:#fff;box-shadow:var(--glow-pink)}.results{max-height:150px;overflow-y:auto;background:#05050a;border:1px solid var(--border-color);border-radius:var(--radius-main);margin-top:12px;font-size:11px}.log-container{background:#05050a;border:1px solid var(--border-color);border-radius:var(--radius-main);padding:12px;max-height:150px;overflow-y:auto;font-family:'Courier New',Courier,monospace;font-size:11px;white-space:pre-wrap;word-break:break-all;user-select:text;margin-top:6px}#cheat-debug-log{color:#10b981}#cheat-error-log{color:var(--accent-danger)}.ce-status{font-size:11px;color:var(--color-muted);margin-top:6px;letter-spacing:.02em}.switch-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #1a1a2e}.switch-row label{font-size:13px}.switch{position:relative;display:inline-block;width:40px;height:22px}.switch input{opacity:0;width:0;height:0}.slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background-color:#2a2a40;transition:.2s;border-radius:22px}.slider:before{position:absolute;content:"";height:16px;width:16px;left:3px;bottom:3px;background-color:#fff;transition:.2s;border-radius:50%}input:checked+.slider{background-color:var(--accent-pink);box-shadow:0 0 8px rgba(255,0,255,0.4)}input:checked+.slider:before{transform:translateX(18px)}.money-btn{background:rgba(255,215,0,0.08)!important;border:1px solid var(--accent-gold)!important;color:var(--accent-gold)!important;font-weight:700!important;width:100%;margin:14px 0 6px 0;text-transform:uppercase;letter-spacing:.05em}.money-btn:hover{background:rgba(255,215,0,0.18)!important;box-shadow:0 0 10px rgba(255,215,0,0.2)!important}.cheat-cat{font-size:11px;font-weight:700;color:var(--accent-cyan);margin:18px 0 8px 0;text-transform:uppercase;letter-spacing:.08em;text-shadow:0 0 6px rgba(0,255,255,0.2)}.cheat-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}::-webkit-scrollbar{width:6px}::-webkit-scrollbar-thumb{background:#2a2a44;border-radius:10px}::-webkit-scrollbar-thumb:hover{background:#3e3e66}.log-header{display:flex;align-items:center;justify-content:space-between;margin-top:8px}.log-header label{font-size:12px;color:var(--color-muted)}.copy-btn{background:var(--bg-input);border:1px solid var(--border-color);color:var(--color-text);padding:4px 10px;border-radius:4px;cursor:pointer;font-size:11px;margin-left:8px;touch-action:manipulation;transition:all .2s}.copy-btn:hover{background:rgba(255,0,255,0.08);border-color:var(--accent-pink)}.error-box{display:none;padding:20px;text-align:center;color:var(--accent-danger)}.error-box.visible{display:block}.ui-disabled{opacity:.35;pointer-events:none}</style></head><body><div id="cheat-engine-ui"><h1>Cheat Engine<button id="cheat-close-btn">✕</button></h1><div class="ce-tabs"><button class="active" data-tab="scanner">Scanner</button><button data-tab="cheats">Cheats</button><button data-tab="quick">Quick</button><button data-tab="debugger">Debugger</button></div><div id="tab-scanner" class="ce-tab-content active"><div class="ce-input-row"><input type="text" id="ce-value" placeholder="Value"><select id="ce-type"><option value="any">Any</option><option value="i32">i32</option><option value="f32">f32</option><option value="i16">i16</option><option value="i8">i8</option></select></div><div class="ce-btn-row"><button id="ce-search">New</button><button id="ce-next">Next</button><button id="ce-reset">Reset</button><button id="ce-snap">Snap</button><button id="ce-inc">Inc</button><button id="ce-dec">Dec</button><button id="ce-changed">Chg</button></div><div class="ce-status" id="ce-status">Ready</div><div class="results" id="ce-results"></div><div class="ce-input-row" style="margin-top:12px"><input type="text" id="ce-manual-addr" placeholder="0xAddress"><button id="ce-view-addr">View</button></div><div id="ce-manual-results" style="display:none"></div></div><div id="tab-cheats" class="ce-tab-content"><div class="cheat-cat">Weapons & Health</div><div class="cheat-grid"><button class="cheat-btn" data-cheat="THUGSTOOLS">ThugTools</button><button class="cheat-btn" data-cheat="PROFESSIONALTOOLS">ProTools</button><button class="cheat-btn" data-cheat="NUTTERTOOLS">NutterTools</button><button class="cheat-btn" data-cheat="ASPIRINE">Health</button><button class="cheat-btn" data-cheat="PRECIOUSPROTECTION">Armor</button></div><div class="cheat-cat">Gameplay</div><div class="cheat-grid"><button class="cheat-btn" data-cheat="LEAVEMEALONE">No Wanted</button><button class="cheat-btn" data-cheat="YOUWONTTAKEMEALIVE">Wanted +2</button><button class="cheat-btn" data-cheat="ONSPEED">Fast Game</button><button class="cheat-btn" data-cheat="BOOOOOORING">Slow Game</button><button class="cheat-btn" data-cheat="LIFEISPASSINGMEBY">Fast Time</button><button class="cheat-btn" data-cheat="BIGBANG">Explode All</button><button class="cheat-btn" data-cheat="FIGHTFIGHTFIGHT">Peds Riot</button><button class="cheat-btn" data-cheat="NOBODYLIKESME">Peds Attack</button><button class="cheat-btn" data-cheat="OURGODGIVENRIGHTTOBEARARMS">Peds Armed</button><button class="cheat-btn" data-cheat="CHICKSWITHGUNS">Armed Girls</button><button class="cheat-btn" data-cheat="FANNYMAGNET">Ladies Man</button><button class="cheat-btn" data-cheat="HOPINGIRL">Get in Car</button><button class="cheat-btn" data-cheat="GREENLIGHT">Green Lights</button><button class="cheat-btn" data-cheat="MIAMITRAFFIC">Fast Traffic</button><button class="cheat-btn" data-cheat="ICANTTAKEITANYMORE">Suicide</button></div><div class="cheat-cat">Skins</div><div class="cheat-grid"><button class="cheat-btn" data-cheat="STILLLIKEDRESSINGUP">Random Skin</button><button class="cheat-btn" data-cheat="IDONTHAVETHEMONEYSONNY">Sonny</button><button class="cheat-btn" data-cheat="LOOKLIKELANCE">Lance</button><button class="cheat-btn" data-cheat="ILOOKLIKEHILARY">Hilary</button><button class="cheat-btn" data-cheat="ROCKANDROLLMAN">Jezz</button><button class="cheat-btn" data-cheat="WELOVEOURDICK">Dick</button><button class="cheat-btn" data-cheat="MYSONISALAWYER">Ken</button><button class="cheat-btn" data-cheat="ONEARMEDBANDIT">Phil</button><button class="cheat-btn" data-cheat="FOXYLITTLETHING">Mercedes</button><button class="cheat-btn" data-cheat="CHEATSHAVEBEENCRACKED">Diaz</button><button class="cheat-btn" data-cheat="IWANTBIGTITS">Candy</button><button class="cheat-btn" data-cheat="CERTAINDEATH">Cigarette</button><button class="cheat-btn" data-cheat="DEEPFRIEDMARSBARS">Fat Tommy</button><button class="cheat-btn" data-cheat="PROGRAMMER">Thin Tommy</button></div><div class="cheat-cat">Vehicles</div><div class="cheat-grid"><button class="cheat-btn" data-cheat="PANZER">Tank</button><button class="cheat-btn" data-cheat="GETTHEREFAST">Sabre Turbo</button><button class="cheat-btn" data-cheat="GETTHEREQUICKLY">Bloodring A</button><button class="cheat-btn" data-cheat="TRAVELINSTYLE">Bloodring B</button><button class="cheat-btn" data-cheat="GETTHEREVERYFASTINDEED">Hotring A</button><button class="cheat-btn" data-cheat="GETTHEREAMAZINGLYFAST">Hotring B</button><button class="cheat-btn" data-cheat="THELASTRIDE">Hearse</button><button class="cheat-btn" data-cheat="ROCKANDROLLCAR">Limo</button><button class="cheat-btn" data-cheat="BETTERTHANWALKING">Caddy</button><button class="cheat-btn" data-cheat="RUBBISHCAR">Trashmaster</button></div><div class="cheat-cat">Vehicle Effects</div><div class="cheat-grid"><button class="cheat-btn" data-cheat="COMEFLYWITHME">Flying Cars</button><button class="cheat-btn" data-cheat="AIRSHIP">Flying Boats</button><button class="cheat-btn" data-cheat="SEAWAYS">Water Drive</button><button class="cheat-btn" data-cheat="WHEELSAREALLINEED">Only Wheels</button><button class="cheat-btn" data-cheat="GRIPISEVERYTHING">Perfect Handling</button><button class="cheat-btn" data-cheat="IWANTITPAINTEDBLACK">Black Cars</button><button class="cheat-btn" data-cheat="AHAIRDRESSERSCAR">Pink Cars</button><button class="cheat-btn" data-cheat="LOADSOFLITTLETHINGS">Small Wheels</button></div><div class="cheat-cat">Weather</div><div class="cheat-grid"><button class="cheat-btn" data-cheat="ALOVELYDAY">Sunny</button><button class="cheat-btn" data-cheat="APLEASANTDAY">Cloudy</button><button class="cheat-btn" data-cheat="ABITDRIEG">Very Cloudy</button><button class="cheat-btn" data-cheat="CATSANDDOGS">Rainy</button><button class="cheat-btn" data-cheat="CANTSEEATHING">Foggy</button></div></div><div id="tab-quick" class="ce-tab-content"><div class="switch-row"><label>Fullscreen</label><label class="switch"><input type="checkbox" id="ce-toggle-fullscreen"><span class="slider"></span></label></div><div class="switch-row"><label>AirBreak (RShift)</label><label class="switch"><input type="checkbox" id="ce-toggle-airbreak"><span class="slider"></span></label></div><div class="switch-row"><label>GodMode</label><label class="switch"><input type="checkbox" id="ce-toggle-godmode"><span class="slider"></span></label></div><button id="ce-add-money" class="money-btn">+$9999999 MONEY</button><div class="ce-input-row"><label style="font-size:13px;">Game Speed:</label><input type="number" id="ce-fly-speed" value="1.0" step="0.5" min="0.1" max="50" style="width:60px;" /></div><div class="ce-status" id="ce-airbreak-status">Ready</div><div style="font-size:10px; color:#666;" id="ce-pos-display"></div></div><div id="tab-debugger" class="ce-tab-content"><div class="log-header"><label>Network Debug Logs</label><button class="copy-btn" id="copy-network-logs">Copy</button></div><div class="log-container" id="cheat-debug-log"></div><div class="log-header" style="margin-top:10px;"><label>Error Logs</label><button class="copy-btn" id="copy-error-logs">Copy</button></div><div class="log-container" id="cheat-error-log"></div><button id="clear-debug-log-btn" style="margin-top:8px; background:#1a1a2e; border:1px solid #444; color:#ccc; padding:4px 8px; border-radius:4px; cursor:pointer; width:100%;">Clear Logs</button></div><div class="error-box" id="error-box"><h2>Game not found</h2><p>Please open this page from the game (via the cheat button).</p><p>If the game is already running, try reloading the popup.</p></div></div><script>
+(async function() {
+    const gameWindow = window.opener;
+    let gameAvailable = false;
+
+    if (!gameWindow || gameWindow.closed || !gameWindow.__gameApi) {
+        document.getElementById('error-box').classList.add('visible');
+        document.querySelector('#cheat-engine-ui').classList.add('ui-disabled');
+        console.warn('Cheat page: No game window found.');
+        document.getElementById('cheat-close-btn').addEventListener('click', () => window.close());
+        return;
+    }
+    gameAvailable = true;
+
+    // ---------- Async API for Scanner, Quick actions, etc. ----------
+    const pending = new Map();
+    let reqId = 0;
+
+    window.addEventListener('message', (event) => {
+        if (event.source !== gameWindow) return;
+        const data = event.data;
+        if (data?.type === 'apiResponse' && data.id != null) {
+            const resolver = pending.get(data.id);
+            if (resolver) {
+                pending.delete(data.id);
+                resolver(data.result);
+            }
         }
+    });
 
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            padding: 0;
-            background: var(--bg-dark);
-            color: var(--color-text);
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            height: 100vh;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        #cheat-engine-ui {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            width: 100%;
-            background: var(--bg-dark);
-        }
-
-        h1 {
-            font-size: 15px;
-            font-weight: 700;
-            letter-spacing: .05em;
-            text-transform: uppercase;
-            margin: 0;
-            padding: 14px 16px;
-            background: var(--bg-panel);
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-shrink: 0;
-        }
-
-        h1 button {
-            background: none;
-            border: none;
-            color: var(--accent-danger);
-            font-size: 18px;
-            cursor: pointer;
-            touch-action: manipulation;
-            transition: transform .2s, opacity .2s;
-        }
-
-        h1 button:hover {
-            transform: scale(1.1);
-            opacity: .8;
-        }
-
-        .ce-tabs {
-            display: flex;
-            border-bottom: 1px solid var(--border-color);
-            background: #0d0d18;
-            flex-shrink: 0;
-        }
-
-        .ce-tabs button {
-            flex: 1;
-            background: none;
-            border: none;
-            color: var(--color-muted);
-            padding: 12px 8px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: .03em;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            touch-action: manipulation;
-            transition: all .2s ease;
-        }
-
-        .ce-tabs button.active {
-            color: #fff;
-            border-bottom-color: var(--accent-pink);
-            background: var(--bg-panel);
-            text-shadow: 0 0 8px var(--accent-pink);
-        }
-
-        .ce-tab-content {
-            display: none;
-            padding: 14px 16px;
-            flex: 1;
-            overflow-y: auto;
-        }
-
-        .ce-tab-content.active {
-            display: block;
-        }
-
-        .ce-input-row {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 10px;
-            align-items: center;
-        }
-
-        .ce-input-row input,
-        .ce-input-row select {
-            background: var(--bg-input);
-            border: 1px solid var(--border-color);
-            color: #fff;
-            padding: 10px;
-            font-size: 13px;
-            border-radius: 6px;
-            flex: 1;
-            outline: none;
-            transition: border-color .2s;
-        }
-
-        .ce-input-row input:focus,
-        .ce-input-row select:focus {
-            border-color: var(--accent-cyan);
-        }
-
-        .ce-btn-row {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 6px;
-            margin-bottom: 10px;
-        }
-
-        .ce-btn-row button,
-        .cheat-grid button {
-            background: var(--bg-input);
-            border: 1px solid var(--border-color);
-            color: #cbd5e1;
-            padding: 10px 6px;
-            font-size: 12px;
-            font-weight: 500;
-            border-radius: 6px;
-            cursor: pointer;
-            touch-action: manipulation;
-            transition: all .15s ease;
-        }
-
-        .ce-btn-row button:hover,
-        .cheat-grid button:hover {
-            background: rgba(255, 0, 255, .08);
-            border-color: var(--border-hover);
-            color: #fff;
-            box-shadow: 0 0 10px rgba(255, 0, 255, .15);
-        }
-
-        .results {
-            max-height: 150px;
-            overflow-y: auto;
-            background: #05050a;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            margin-top: 10px;
-            font-size: 11px;
-        }
-
-        .log-container {
-            background: #05050a;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 10px;
-            max-height: 150px;
-            overflow-y: auto;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 11px;
-            white-space: pre-wrap;
-            word-break: break-all;
-            user-select: text;
-            margin-top: 6px;
-        }
-
-        #cheat-debug-log {
-            color: #10b981;
-        }
-
-        #cheat-error-log {
-            color: var(--accent-danger);
-        }
-
-        .ce-status {
-            font-size: 11px;
-            color: var(--color-muted);
-            margin-top: 6px;
-            letter-spacing: .02em;
-        }
-
-        .switch-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid #1a1a2e;
-        }
-
-        .switch-row label {
-            font-size: 13px;
-        }
-
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 40px;
-            height: 22px;
-        }
-
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #2a2a40;
-            transition: .2s;
-            border-radius: 22px;
-        }
-
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 16px;
-            width: 16px;
-            left: 3px;
-            bottom: 3px;
-            background-color: #fff;
-            transition: .2s;
-            border-radius: 50%;
-        }
-
-        input:checked+.slider {
-            background-color: var(--accent-pink);
-            box-shadow: 0 0 8px rgba(255, 0, 255, .4);
-        }
-
-        input:checked+.slider:before {
-            transform: translateX(18px);
-        }
-
-        .money-btn {
-            background: rgba(255, 215, 0, .08) !important;
-            border: 1px solid var(--accent-gold) !important;
-            color: var(--accent-gold) !important;
-            font-weight: 700 !important;
-            width: 100%;
-            margin: 12px 0 6px 0;
-            text-transform: uppercase;
-            letter-spacing: .05em;
-        }
-
-        .money-btn:hover {
-            background: rgba(255, 215, 0, .18) !important;
-            box-shadow: 0 0 10px rgba(255, 215, 0, .2) !important;
-        }
-
-        .cheat-cat {
-            font-size: 11px;
-            font-weight: 700;
-            color: var(--accent-cyan);
-            margin: 16px 0 6px 0;
-            text-transform: uppercase;
-            letter-spacing: .08em;
-            text-shadow: 0 0 6px rgba(0, 255, 255, .2);
-        }
-
-        .cheat-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 6px;
-        }
-
-        ::-webkit-scrollbar {
-            width: 5px;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #2a2a44;
-            border-radius: 10px;
-        }
-
-        .log-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-top: 8px;
-        }
-
-        .log-header label {
-            font-size: 12px;
-            color: var(--color-muted);
-        }
-
-        .copy-btn {
-            background: var(--bg-input);
-            border: 1px solid var(--border-color);
-            color: var(--color-text);
-            padding: 4px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 11px;
-            margin-left: 8px;
-            touch-action: manipulation;
-            transition: all .2s;
-        }
-
-        .copy-btn:hover {
-            background: rgba(255, 0, 255, .08);
-            border-color: var(--accent-pink);
-        }
-
-        .error-box {
-            display: none;
-            padding: 20px;
-            text-align: center;
-            color: var(--accent-danger);
-        }
-
-        .error-box.visible {
-            display: block;
-        }
-
-        .ui-disabled {
-            opacity: .35;
-            pointer-events: none;
-        }
-    </style>
-</head>
-<body>
-    <div id="cheat-engine-ui">
-        <h1>Cheat Engine <button id="cheat-close-btn">✕</button></h1>
-        <div class="ce-tabs">
-            <button class="active" data-tab="scanner">Scanner</button>
-            <button data-tab="cheats">Cheats</button>
-            <button data-tab="quick">Quick</button>
-            <button data-tab="debugger">Debugger</button>
-        </div>
-
-        <div id="tab-scanner" class="ce-tab-content active">
-            <div class="ce-input-row">
-                <input type="text" id="ce-value" placeholder="Value">
-                <select id="ce-type">
-                    <option value="any">Any</option>
-                    <option value="i32">i32</option>
-                    <option value="f32">f32</option>
-                    <option value="i16">i16</option>
-                    <option value="i8">i8</option>
-                </select>
-            </div>
-            <div class="ce-btn-row">
-                <button id="ce-search">New</button>
-                <button id="ce-next">Next</button>
-                <button id="ce-reset">Reset</button>
-                <button id="ce-snap">Snap</button>
-                <button id="ce-inc">Inc</button>
-                <button id="ce-dec">Dec</button>
-                <button id="ce-changed">Chg</button>
-            </div>
-            <div class="ce-status" id="ce-status">Ready</div>
-            <div class="results" id="ce-results"></div>
-            <div class="ce-input-row" style="margin-top:10px">
-                <input type="text" id="ce-manual-addr" placeholder="0xAddress">
-                <button id="ce-view-addr">View</button>
-            </div>
-            <div id="ce-manual-results" style="display:none"></div>
-        </div>
-
-        <div id="tab-cheats" class="ce-tab-content">
-            <div class="cheat-cat">Weapons & Health</div>
-            <div class="cheat-grid">
-                <button class="cheat-btn" data-cheat="THUGSTOOLS">Thug Tools</button>
-                <button class="cheat-btn" data-cheat="PROFESSIONALTOOLS">Pro Tools</button>
-                <button class="cheat-btn" data-cheat="NUTTERTOOLS">Nutter Tools</button>
-                <button class="cheat-btn" data-cheat="ASPIRINE">Health</button>
-                <button class="cheat-btn" data-cheat="PRECIOUSPROTECTION">Armor</button>
-            </div>
-            <div class="cheat-cat">Gameplay</div>
-            <div class="cheat-grid">
-                <button class="cheat-btn" data-cheat="LEAVEMEALONE">No Wanted</button>
-                <button class="cheat-btn" data-cheat="YOUWONTTAKEMEALIVE">Wanted +2</button>
-                <button class="cheat-btn" data-cheat="ONSPEED">Fast Game</button>
-                <button class="cheat-btn" data-cheat="BOOOOOORING">Slow Game</button>
-                <button class="cheat-btn" data-cheat="LIFEISPASSINGMEBY">Fast Time</button>
-                <button class="cheat-btn" data-cheat="BIGBANG">Explode All</button>
-                <button class="cheat-btn" data-cheat="FIGHTFIGHTFIGHT">Peds Riot</button>
-                <button class="cheat-btn" data-cheat="NOBODYLIKESME">Peds Attack</button>
-                <button class="cheat-btn" data-cheat="OURGODGIVENRIGHTTOBEARARMS">Peds Armed</button>
-                <button class="cheat-btn" data-cheat="CHICKSWITHGUNS">Armed Girls</button>
-                <button class="cheat-btn" data-cheat="FANNYMAGNET">Ladies Man</button>
-                <button class="cheat-btn" data-cheat="HOPINGIRL">Get in Car</button>
-                <button class="cheat-btn" data-cheat="GREENLIGHT">Green Lights</button>
-                <button class="cheat-btn" data-cheat="MIAMITRAFFIC">Fast Traffic</button>
-                <button class="cheat-btn" data-cheat="ICANTTAKEITANYMORE">Suicide</button>
-            </div>
-            <div class="cheat-cat">Skins</div>
-            <div class="cheat-grid">
-                <button class="cheat-btn" data-cheat="STILLLIKEDRESSINGUP">Random Skin</button>
-                <button class="cheat-btn" data-cheat="IDONTHAVETHEMONEYSONNY">Sonny</button>
-                <button class="cheat-btn" data-cheat="LOOKLIKELANCE">Lance</button>
-                <button class="cheat-btn" data-cheat="ILOOKLIKEHILARY">Hilary</button>
-                <button class="cheat-btn" data-cheat="ROCKANDROLLMAN">Jezz</button>
-                <button class="cheat-btn" data-cheat="WELOVEOURDICK">Dick</button>
-                <button class="cheat-btn" data-cheat="MYSONISALAWYER">Ken</button>
-                <button class="cheat-btn" data-cheat="ONEARMEDBANDIT">Phil</button>
-                <button class="cheat-btn" data-cheat="FOXYLITTLETHING">Mercedes</button>
-                <button class="cheat-btn" data-cheat="CHEATSHAVEBEENCRACKED">Diaz</button>
-                <button class="cheat-btn" data-cheat="IWANTBIGTITS">Candy</button>
-                <button class="cheat-btn" data-cheat="CERTAINDEATH">Cigarette</button>
-                <button class="cheat-btn" data-cheat="DEEPFRIEDMARSBARS">Fat Tommy</button>
-                <button class="cheat-btn" data-cheat="PROGRAMMER">Thin Tommy</button>
-            </div>
-            <div class="cheat-cat">Vehicles</div>
-            <div class="cheat-grid">
-                <button class="cheat-btn" data-cheat="PANZER">Tank</button>
-                <button class="cheat-btn" data-cheat="GETTHEREFAST">Sabre Turbo</button>
-                <button class="cheat-btn" data-cheat="GETTHEREQUICKLY">Bloodring A</button>
-                <button class="cheat-btn" data-cheat="TRAVELINSTYLE">Bloodring B</button>
-                <button class="cheat-btn" data-cheat="GETTHEREVERYFASTINDEED">Hotring A</button>
-                <button class="cheat-btn" data-cheat="GETTHEREAMAZINGLYFAST">Hotring B</button>
-                <button class="cheat-btn" data-cheat="THELASTRIDE">Hearse</button>
-                <button class="cheat-btn" data-cheat="ROCKANDROLLCAR">Limo</button>
-                <button class="cheat-btn" data-cheat="BETTERTHANWALKING">Caddy</button>
-                <button class="cheat-btn" data-cheat="RUBBISHCAR">Trashmaster</button>
-            </div>
-            <div class="cheat-cat">Vehicle Effects</div>
-            <div class="cheat-grid">
-                <button class="cheat-btn" data-cheat="COMEFLYWITHME">Flying Cars</button>
-                <button class="cheat-btn" data-cheat="AIRSHIP">Flying Boats</button>
-                <button class="cheat-btn" data-cheat="SEAWAYS">Water Drive</button>
-                <button class="cheat-btn" data-cheat="WHEELSAREALLINEED">Only Wheels</button>
-                <button class="cheat-btn" data-cheat="GRIPISEVERYTHING">Perfect Handling</button>
-                <button class="cheat-btn" data-cheat="IWANTITPAINTEDBLACK">Black Cars</button>
-                <button class="cheat-btn" data-cheat="AHAIRDRESSERSCAR">Pink Cars</button>
-                <button class="cheat-btn" data-cheat="LOADSOFLITTLETHINGS">Small Wheels</button>
-            </div>
-            <div class="cheat-cat">Weather</div>
-            <div class="cheat-grid">
-                <button class="cheat-btn" data-cheat="ALOVELYDAY">Sunny</button>
-                <button class="cheat-btn" data-cheat="APLEASANTDAY">Cloudy</button>
-                <button class="cheat-btn" data-cheat="ABITDRIEG">Very Cloudy</button>
-                <button class="cheat-btn" data-cheat="CATSANDDOGS">Rainy</button>
-                <button class="cheat-btn" data-cheat="CANTSEEATHING">Foggy</button>
-            </div>
-        </div>
-
-        <div id="tab-quick" class="ce-tab-content">
-            <div class="switch-row">
-                <label>Fullscreen</label>
-                <label class="switch"><input type="checkbox" id="ce-toggle-fullscreen"><span class="slider"></span></label>
-            </div>
-            <div class="switch-row">
-                <label>AirBreak (RShift)</label>
-                <label class="switch"><input type="checkbox" id="ce-toggle-airbreak"><span class="slider"></span></label>
-            </div>
-            <div class="switch-row">
-                <label>GodMode</label>
-                <label class="switch"><input type="checkbox" id="ce-toggle-godmode"><span class="slider"></span></label>
-            </div>
-            <button id="ce-add-money" class="money-btn">+$9999999 MONEY</button>
-            <div class="ce-input-row">
-                <label style="font-size:13px;">Fly Speed:</label>
-                <input type="number" id="ce-fly-speed" value="2.0" step="0.5" min="0.1" max="50" style="width:60px;" />
-            </div>
-            <div class="ce-status" id="ce-airbreak-status">Ready</div>
-            <div style="font-size:10px; color:#666;" id="ce-pos-display"></div>
-        </div>
-
-        <div id="tab-debugger" class="ce-tab-content">
-            <div class="log-header">
-                <label>Network Debug Logs</label>
-                <button class="copy-btn" id="copy-network-logs">Copy</button>
-            </div>
-            <div class="log-container" id="cheat-debug-log"></div>
-            <div class="log-header" style="margin-top:10px;">
-                <label>Error Logs</label>
-                <button class="copy-btn" id="copy-error-logs">Copy</button>
-            </div>
-            <div class="log-container" id="cheat-error-log"></div>
-            <button id="clear-debug-log-btn" style="margin-top:8px; background:#1a1a2e; border:1px solid #444; color:#ccc; padding:4px 8px; border-radius:4px; cursor:pointer; width:100%;">Clear Logs</button>
-        </div>
-
-        <div class="error-box" id="error-box">
-            <h2>Game not found</h2>
-            <p>Please open this page from the game (via the cheat button).</p>
-            <p>If the game is already running, try reloading the popup.</p>
-        </div>
-    </div>
-
-    <script>
-        (function() {
-            const gameOpener = window.opener;
-            let gameAvailable = false;
-
-            if (gameOpener && !gameOpener.closed && gameOpener.__gameApi) {
-                gameAvailable = true;
-            } else {
-                document.getElementById('error-box').classList.add('visible');
-                document.querySelector('#cheat-engine-ui').classList.add('ui-disabled');
-                console.warn('Cheat page: No game window found.');
-                document.getElementById('cheat-close-btn').addEventListener('click', () => window.close());
+    function apiCall(method, ...args) {
+        return new Promise((resolve, reject) => {
+            if (!gameWindow || gameWindow.closed) {
+                reject(new Error('Game window closed'));
                 return;
             }
-
-            function callGameApi(method, ...args) {
-                if (!window.opener || window.opener.closed || !window.opener.__gameApi) {
-                    document.getElementById('error-box').classList.add('visible');
-                    document.querySelector('#cheat-engine-ui').classList.add('ui-disabled');
-                    gameAvailable = false;
-                    return null;
+            const id = ++reqId;
+            pending.set(id, resolve);
+            gameWindow.postMessage({ type: 'apiCall', id, method, args }, '*');
+            setTimeout(() => {
+                if (pending.has(id)) {
+                    pending.delete(id);
+                    reject(new Error(`API call ${method} timed out`));
                 }
-                if (typeof window.opener.__gameApi[method] !== 'function') {
-                    console.warn('Game API method not available:', method);
-                    return null;
-                }
-                try {
-                    return window.opener.__gameApi[method](...args);
-                } catch (e) {
-                    console.error('Error calling gameApi.' + method, e);
-                    return null;
-                }
+            }, 15000);
+        });
+    }
+
+    async function safeApi(method, ...args) {
+        try {
+            return await apiCall(method, ...args);
+        } catch (e) {
+            console.error('Game API error:', e);
+            updateStatus('Error: ' + e.message);
+            return null;
+        }
+    }
+
+    const statusEl = document.getElementById('ce-status');
+    function updateStatus(text) { statusEl.textContent = text; }
+
+    let results = [];
+    let isSearching = false;
+
+    async function firstSearch() {
+        if (isSearching) return;
+        const valStr = document.getElementById('ce-value').value;
+        const type = document.getElementById('ce-type').value;
+        const val = parseFloat(valStr);
+        if (isNaN(val)) { updateStatus("Invalid value"); return; }
+        isSearching = true;
+        updateStatus("Searching...");
+        results = (await safeApi('scanMemory', val, type)) || [];
+        isSearching = false;
+        updateStatus(`Found ${results.length} addresses`);
+        displayResults();
+    }
+
+    async function nextSearch() {
+        if (isSearching || results.length === 0) {
+            if (results.length === 0) updateStatus("No results. Do 'New' search first.");
+            return;
+        }
+        const valStr = document.getElementById('ce-value').value;
+        const val = parseFloat(valStr);
+        if (isNaN(val)) { updateStatus("Invalid value"); return; }
+        isSearching = true;
+        updateStatus("Filtering...");
+        const allResults = (await safeApi('scanMemory', val, 'any')) || [];
+        const addrSet = new Set(results.map(r => r.addr));
+        results = allResults.filter(r => addrSet.has(r.addr));
+        isSearching = false;
+        updateStatus(`Found ${results.length} addresses`);
+        displayResults();
+    }
+
+    async function snapshotValues() {
+        if (results.length === 0) { updateStatus("No results to snapshot"); return; }
+        const valStr = document.getElementById('ce-value').value;
+        const val = parseFloat(valStr);
+        if (isNaN(val)) { updateStatus("Invalid value for snapshot"); return; }
+        const fresh = (await safeApi('scanMemory', val, 'any')) || [];
+        const addrSet = new Set(results.map(r => r.addr));
+        results = fresh.filter(r => addrSet.has(r.addr)).map(r => {
+            r.lastVal = r.val !== undefined ? r.val : null;
+            return r;
+        });
+        updateStatus(`Snapshot: ${results.length} values captured`);
+        displayResults();
+    }
+
+    async function filterResults(mode) {
+        if (isSearching || results.length === 0) {
+            updateStatus("No results to filter.");
+            return;
+        }
+        isSearching = true;
+        updateStatus("Filtering...");
+        const updated = [];
+        for (const res of results) {
+            const currentVal = await safeApi('readMemory', res.addr, res.type);
+            if (currentVal === null) continue;
+            let match = false;
+            if (mode === 'inc' && currentVal > res.lastVal) match = true;
+            if (mode === 'dec' && currentVal < res.lastVal) match = true;
+            if (mode === 'changed' && Math.abs(currentVal - res.lastVal) > 0.0001) match = true;
+            if (match) {
+                res.lastVal = currentVal;
+                updated.push(res);
             }
+        }
+        results = updated;
+        isSearching = false;
+        updateStatus(`Found ${results.length} addresses`);
+        displayResults();
+    }
 
-            const statusEl = document.getElementById('ce-status');
-            function updateStatus(text) { statusEl.textContent = text; }
-
-            let results = [];
-            let isSearching = false;
-
-            function ensureLastVal(resultObj) {
-                if (resultObj && resultObj.addr !== undefined) {
-                    if (resultObj.lastVal === undefined) {
-                        resultObj.lastVal = resultObj.val !== undefined ? resultObj.val : callGameApi('readMemory', resultObj.addr, resultObj.type);
-                    }
-                }
-                return resultObj;
-            }
-
-            function firstSearch() {
-                if (isSearching) return;
-                const valStr = document.getElementById('ce-value').value;
-                const type = document.getElementById('ce-type').value;
-                const val = parseFloat(valStr);
-                if (isNaN(val)) { updateStatus("Invalid value"); return; }
-                isSearching = true;
-                updateStatus("Searching...");
-                try {
-                    const raw = callGameApi('scanMemory', val, type) || [];
-                    results = raw.map(r => ensureLastVal(r));
-                    updateStatus(`Found ${results.length} addresses`);
-                } catch (e) { updateStatus("Error: " + e.message); }
-                isSearching = false;
-                displayResults();
-            }
-
-            function nextSearch() {
-                if (isSearching || results.length === 0) {
-                    if (results.length === 0) updateStatus("No results. Do 'New' search first.");
-                    return;
-                }
-                const valStr = document.getElementById('ce-value').value;
-                const val = parseFloat(valStr);
-                if (isNaN(val)) { updateStatus("Invalid value"); return; }
-                isSearching = true;
-                updateStatus("Filtering...");
-                try {
-                    const allResults = callGameApi('scanMemory', val, 'any') || [];
-                    const addrSet = new Set(results.map(r => r.addr));
-                    const filtered = allResults.filter(r => addrSet.has(r.addr));
-                    results = filtered.map(r => ensureLastVal(r));
-                    updateStatus(`Found ${results.length} addresses (filtered)`);
-                } catch (e) { updateStatus("Error: " + e.message); }
-                isSearching = false;
-                displayResults();
-            }
-
-            function snapshotValues() {
-                if (results.length === 0) { updateStatus("No results to snapshot"); return; }
-                const valStr = document.getElementById('ce-value').value;
-                const val = parseFloat(valStr);
-                if (isNaN(val)) { updateStatus("Invalid value for snapshot"); return; }
-                try {
-                    const fresh = callGameApi('scanMemory', val, 'any') || [];
-                    const addrSet = new Set(results.map(r => r.addr));
-                    const filtered = fresh.filter(r => addrSet.has(r.addr));
-                    results = filtered.map(r => ensureLastVal(r));
-                    updateStatus(`Snapshot: ${results.length} values captured`);
-                    displayResults();
-                } catch (e) { updateStatus("Error: " + e.message); }
-            }
-
-            function filterResults(mode) {
-                if (isSearching || results.length === 0) {
-                    updateStatus("No results to filter. Do 'New' search first.");
-                    return;
-                }
-                isSearching = true;
-                updateStatus("Filtering...");
-                try {
-                    const updated = [];
-                    for (const res of results) {
-                        const currentVal = callGameApi('readMemory', res.addr, res.type);
-                        if (currentVal === null) continue;
-                        let match = false;
-                        if (mode === 'inc' && currentVal > res.lastVal) match = true;
-                        if (mode === 'dec' && currentVal < res.lastVal) match = true;
-                        if (mode === 'changed' && Math.abs(currentVal - res.lastVal) > 0.0001) match = true;
-                        if (match) {
-                            res.lastVal = currentVal;
-                            updated.push(res);
-                        }
-                    }
-                    results = updated;
-                    updateStatus(`Found ${results.length} addresses (compared to snapshot)`);
-                    displayResults();
-                } catch (e) { updateStatus("Error: " + e.message); }
-                isSearching = false;
-            }
-
-            function displayResults() {
-                const container = document.getElementById('ce-results');
-                container.innerHTML = '';
-                const limit = Math.min(results.length, 100);
-                for (let i = 0; i < limit; i++) {
-                    const res = results[i];
-                    const div = document.createElement('div');
-                    div.style.display = 'flex';
-                    div.style.justifyContent = 'space-between';
-                    div.style.marginBottom = '2px';
-                    div.style.borderBottom = '1px solid #333';
-                    let currentVal = '???';
-                    try { currentVal = callGameApi('readMemory', res.addr, res.type); } catch (e) {}
-                    div.innerHTML = `
-                        <span style="color: #ff00ff;">0x${res.addr.toString(16)}</span>
-                        <span style="color: #0ff;">${currentVal}</span>
-                        <button class="cheat-btn" onclick="window.editAddr(${res.addr}, '${res.type}')">Edit</button>
-                    `;
-                    container.appendChild(div);
-                }
-            }
-
-            window.editAddr = function(addr, type) {
+    async function displayResults() {
+        const container = document.getElementById('ce-results');
+        container.innerHTML = '';
+        const limit = Math.min(results.length, 100);
+        for (let i = 0; i < limit; i++) {
+            const res = results[i];
+            const currentVal = await safeApi('readMemory', res.addr, res.type);
+            const div = document.createElement('div');
+            div.style.display = 'flex';
+            div.style.justifyContent = 'space-between';
+            div.style.marginBottom = '2px';
+            div.style.borderBottom = '1px solid #333';
+            div.innerHTML = `
+                <span style="color: #ff00ff;">0x${res.addr.toString(16)}</span>
+                <span style="color: #0ff;">${currentVal !== null ? currentVal : '???'}</span>
+                <button class="cheat-btn" data-edit-addr="${res.addr}" data-edit-type="${res.type}">Edit</button>
+            `;
+            container.appendChild(div);
+        }
+        container.querySelectorAll('button[data-edit-addr]').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const addr = parseInt(this.dataset.editAddr);
+                const type = this.dataset.editType;
                 const newVal = prompt(`Enter new value for 0x${addr.toString(16)} (${type}):`);
                 if (newVal === null) return;
-                try {
-                    const num = parseFloat(newVal);
-                    if (isNaN(num)) { alert('Invalid number'); return; }
-                    callGameApi('writeMemory', addr, type, num);
-                    updateStatus(`Value at 0x${addr.toString(16)} updated`);
-                    displayResults();
-                } catch (e) { alert('Error writing to memory: ' + e.message); }
-            };
+                const num = parseFloat(newVal);
+                if (isNaN(num)) { alert('Invalid number'); return; }
+                await safeApi('writeMemory', addr, type, num);
+                updateStatus(`Value at 0x${addr.toString(16)} updated`);
+                displayResults();
+            });
+        });
+    }
 
-            function viewManualAddr() {
-                const addrStr = document.getElementById('ce-manual-addr').value;
-                const addr = parseInt(addrStr, 16);
-                if (isNaN(addr)) { alert('Invalid address'); return; }
-                const container = document.getElementById('ce-manual-results');
-                container.style.display = 'block';
-                container.innerHTML = '';
-                const types = ['i8', 'i16', 'i32', 'f32', 'f64'];
-                types.forEach(type => {
-                    let val = '???';
-                    try { val = callGameApi('readMemory', addr, type); } catch (e) {}
-                    const div = document.createElement('div');
-                    div.style.display = 'flex';
-                    div.style.justifyContent = 'space-between';
-                    div.style.marginBottom = '2px';
-                    div.innerHTML = `
-                        <span style="color: #0ff;">${type.toUpperCase()}:</span>
-                        <span>${val}</span>
-                        <button class="cheat-btn" onclick="window.editAddr(${addr}, '${type}')">Edit</button>
-                    `;
-                    container.appendChild(div);
-                });
+    async function viewManualAddr() {
+        const addrStr = document.getElementById('ce-manual-addr').value;
+        const addr = parseInt(addrStr, 16);
+        if (isNaN(addr)) { alert('Invalid address'); return; }
+        const container = document.getElementById('ce-manual-results');
+        container.style.display = 'block';
+        container.innerHTML = '';
+        const types = ['i8', 'i16', 'i32', 'f32', 'f64'];
+        for (const type of types) {
+            const val = await safeApi('readMemory', addr, type);
+            const div = document.createElement('div');
+            div.style.display = 'flex';
+            div.style.justifyContent = 'space-between';
+            div.style.marginBottom = '2px';
+            div.innerHTML = `
+                <span style="color: #0ff;">${type.toUpperCase()}:</span>
+                <span>${val !== null ? val : '???'}</span>
+                <button class="cheat-btn" data-edit-addr="${addr}" data-edit-type="${type}">Edit</button>
+            `;
+            container.appendChild(div);
+        }
+        container.querySelectorAll('button[data-edit-addr]').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const a = parseInt(this.dataset.editAddr);
+                const t = this.dataset.editType;
+                const newVal = prompt(`New value for 0x${a.toString(16)} (${t}):`);
+                if (newVal === null) return;
+                const num = parseFloat(newVal);
+                if (isNaN(num)) { alert('Invalid number'); return; }
+                await safeApi('writeMemory', a, t, num);
+                updateStatus('Value updated');
+                viewManualAddr();
+            });
+        });
+    }
+
+    // ── CHEAT CODE BUTTONS – set pending cheat, then close popup ──
+    document.querySelectorAll('.cheat-btn:not([data-edit-addr])').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const code = btn.dataset.cheat;
+            if (code && gameWindow) {
+                gameWindow._pendingCheat = code;
+                updateStatus(`Cheat "${code}" will activate after closing.`);
+                setTimeout(() => window.close(), 200);
             }
+        });
+    });
 
-            document.querySelectorAll('.cheat-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const code = this.dataset.cheat;
-                    if (code) {
-                        callGameApi('typeCheat', code);
-                        updateStatus(`Cheat entered: ${code}`);
-                    }
-                });
-            });
+    // Scanner buttons
+    document.getElementById('ce-search').addEventListener('click', firstSearch);
+    document.getElementById('ce-next').addEventListener('click', nextSearch);
+    document.getElementById('ce-snap').addEventListener('click', snapshotValues);
+    document.getElementById('ce-inc').addEventListener('click', () => filterResults('inc'));
+    document.getElementById('ce-dec').addEventListener('click', () => filterResults('dec'));
+    document.getElementById('ce-changed').addEventListener('click', () => filterResults('changed'));
+    document.getElementById('ce-reset').addEventListener('click', () => {
+        results = [];
+        document.getElementById('ce-results').innerHTML = '';
+        updateStatus('Reset');
+    });
+    document.getElementById('ce-view-addr').addEventListener('click', viewManualAddr);
 
-            document.getElementById('ce-toggle-fullscreen').addEventListener('change', function(e) {
-                callGameApi('toggleFullscreen', e.target.checked);
-            });
-            document.getElementById('ce-toggle-airbreak').addEventListener('change', function(e) {
-                callGameApi('toggleAirBrake', e.target.checked);
-            });
-            document.getElementById('ce-toggle-godmode').addEventListener('change', function(e) {
-                callGameApi('toggleGodMode', e.target.checked);
-            });
-            document.getElementById('ce-add-money').addEventListener('click', function() {
-                callGameApi('addMoney');
-                updateStatus('+$9999999 added!');
-            });
-            document.getElementById('ce-fly-speed').addEventListener('change', function() {
-                const speed = parseFloat(this.value) || 2.0;
-                callGameApi('setFlySpeed', speed);
-                updateStatus(`Fly speed set to ${speed}`);
-            });
+    // Quick toggles
+    document.getElementById('ce-toggle-fullscreen').addEventListener('change', async (e) => {
+        await safeApi('toggleFullscreen', e.target.checked);
+    });
+    document.getElementById('ce-toggle-airbreak').addEventListener('change', async (e) => {
+        await safeApi('toggleAirBrake', e.target.checked);
+    });
+    document.getElementById('ce-toggle-godmode').addEventListener('change', async (e) => {
+        await safeApi('toggleGodMode', e.target.checked);
+    });
+    document.getElementById('ce-add-money').addEventListener('click', async () => {
+        await safeApi('addMoney');
+        updateStatus('+$9999999 added!');
+    });
+    document.getElementById('ce-fly-speed').addEventListener('change', async function() {
+        const speed = parseFloat(this.value) || 1.0;
+        await safeApi('setFlySpeed', speed);
+        updateStatus(`Game speed set to ${speed}`);
+    });
 
-            function updateNetworkLogs() {
-                const logDiv = document.getElementById('cheat-debug-log');
-                try {
-                    const lines = callGameApi('getDebugLogs');
-                    if (lines) logDiv.textContent = lines.join('\n');
-                } catch (e) {}
+    // Debug logs (original synchronous behaviour)
+    function updateNetworkLogs() {
+        const logDiv = document.getElementById('cheat-debug-log');
+        try {
+            if (window.opener && window.opener.__gameApi && typeof window.opener.__gameApi.getDebugLogs === 'function') {
+                const lines = window.opener.__gameApi.getDebugLogs();
+                if (lines) logDiv.textContent = lines.join('\n');
             }
+        } catch (e) {}
+    }
 
-            function updateErrorLogs() {
-                const logDiv = document.getElementById('cheat-error-log');
-                try {
-                    const lines = callGameApi('getErrorLogs');
-                    if (lines) logDiv.textContent = lines.join('\n');
-                } catch (e) {}
+    function updateErrorLogs() {
+        const logDiv = document.getElementById('cheat-error-log');
+        try {
+            if (window.opener && window.opener.__gameApi && typeof window.opener.__gameApi.getErrorLogs === 'function') {
+                const lines = window.opener.__gameApi.getErrorLogs();
+                if (lines) logDiv.textContent = lines.join('\n');
             }
+        } catch (e) {}
+    }
 
-            document.getElementById('copy-network-logs').addEventListener('click', function() {
-                const text = document.getElementById('cheat-debug-log').textContent;
-                if (navigator.clipboard) {
-                    navigator.clipboard.writeText(text).catch(() => {});
-                } else {
-                    const ta = document.createElement('textarea');
-                    ta.value = text;
-                    ta.style.position = 'fixed';
-                    ta.style.left = '-9999px';
-                    document.body.appendChild(ta);
-                    ta.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(ta);
-                }
-            });
-            document.getElementById('copy-error-logs').addEventListener('click', function() {
-                const text = document.getElementById('cheat-error-log').textContent;
-                if (navigator.clipboard) {
-                    navigator.clipboard.writeText(text).catch(() => {});
-                } else {
-                    const ta = document.createElement('textarea');
-                    ta.value = text;
-                    ta.style.position = 'fixed';
-                    ta.style.left = '-9999px';
-                    document.body.appendChild(ta);
-                    ta.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(ta);
-                }
-            });
-            document.getElementById('clear-debug-log-btn').addEventListener('click', function() {
-                document.getElementById('cheat-debug-log').textContent = '';
-                document.getElementById('cheat-error-log').textContent = '';
-                callGameApi('clearLogs');
-                updateStatus('Logs cleared');
-            });
+    setInterval(() => {
+        const activeTab = document.querySelector('.ce-tab-content.active');
+        if (activeTab && activeTab.id === 'tab-debugger') {
+            updateNetworkLogs();
+            updateErrorLogs();
+        }
+    }, 1000);
 
-            let logInterval = null;
-            function startLogPolling() {
-                if (logInterval) clearInterval(logInterval);
-                logInterval = setInterval(() => {
-                    const activeTab = document.querySelector('.ce-tab-content.active');
-                    if (activeTab && activeTab.id === 'tab-debugger') {
-                        if (gameAvailable && window.opener && window.opener.__gameApi) {
-                            updateNetworkLogs();
-                            updateErrorLogs();
-                        }
-                    }
-                }, 1000);
+    document.querySelectorAll('.ce-tabs button').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.ce-tabs button').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            const tabId = 'tab-' + this.dataset.tab;
+            document.querySelectorAll('.ce-tab-content').forEach(t => t.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            if (this.dataset.tab === 'debugger') {
+                updateNetworkLogs();
+                updateErrorLogs();
             }
-            startLogPolling();
+        });
+    });
 
-            document.querySelectorAll('.ce-tabs button').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    document.querySelectorAll('.ce-tabs button').forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    const tabId = 'tab-' + this.dataset.tab;
-                    document.querySelectorAll('.ce-tab-content').forEach(t => t.classList.remove('active'));
-                    const tab = document.getElementById(tabId);
-                    if (tab) tab.classList.add('active');
-                    if (this.dataset.tab === 'debugger') {
-                        updateNetworkLogs();
-                        updateErrorLogs();
-                    }
-                });
-            });
+    document.getElementById('copy-network-logs').addEventListener('click', () => {
+        const text = document.getElementById('cheat-debug-log').textContent;
+        if (navigator.clipboard) navigator.clipboard.writeText(text).catch(() => {});
+    });
+    document.getElementById('copy-error-logs').addEventListener('click', () => {
+        const text = document.getElementById('cheat-error-log').textContent;
+        if (navigator.clipboard) navigator.clipboard.writeText(text).catch(() => {});
+    });
+    document.getElementById('clear-debug-log-btn').addEventListener('click', () => {
+        document.getElementById('cheat-debug-log').textContent = '';
+        document.getElementById('cheat-error-log').textContent = '';
+        if (window.opener && window.opener.__gameApi && typeof window.opener.__gameApi.clearLogs === 'function') {
+            window.opener.__gameApi.clearLogs();
+        }
+        updateStatus('Logs cleared');
+    });
 
-            document.getElementById('ce-search').addEventListener('click', firstSearch);
-            document.getElementById('ce-next').addEventListener('click', nextSearch);
-            document.getElementById('ce-snap').addEventListener('click', snapshotValues);
-            document.getElementById('ce-inc').addEventListener('click', () => filterResults('inc'));
-            document.getElementById('ce-dec').addEventListener('click', () => filterResults('dec'));
-            document.getElementById('ce-changed').addEventListener('click', () => filterResults('changed'));
-            document.getElementById('ce-reset').addEventListener('click', function() {
-                results = [];
-                document.getElementById('ce-results').innerHTML = '';
-                updateStatus('Reset');
-            });
-            document.getElementById('ce-view-addr').addEventListener('click', viewManualAddr);
-            document.getElementById('cheat-close-btn').addEventListener('click', () => window.close());
-
-            updateStatus('Ready. Connected to game.');
-            console.log('🔧 Cheat Engine UI loaded (standalone).');
-        })();
-    </script>
-</body>
-</html>
+    document.getElementById('cheat-close-btn').addEventListener('click', () => window.close());
+    updateStatus('Ready. Safe async connection.');
+})();
+</script></body></html>

@@ -360,6 +360,20 @@
                         <span class="slider-block"></span>
                     </label>
                 </div>
+                <!-- NEW Frame Rate row -->
+                <div class="node-row">
+                    <div class="label-block">
+                        <span class="title-text">Frame Rate</span>
+                        <span class="desc-text">Game simulation speed</span>
+                    </div>
+                    <div class="select-wrap">
+                        <select id="config-fps" class="select-field">
+                            <option value="30">30 FPS (normal)</option>
+                            <option value="60">60 FPS (smooth)</option>
+                            <option value="0">Unlimited</option>
+                        </select>
+                    </div>
+                </div>
             </div>
         </main>
         <footer class="trigger-area">
@@ -389,6 +403,10 @@
                         if (lowMemoryEl && typeof settings.lowMemory !== 'undefined') {
                             lowMemoryEl.checked = settings.lowMemory;
                         }
+                        const fpsEl = document.getElementById("config-fps");
+                        if (fpsEl && settings.fps) {
+                            fpsEl.value = settings.fps;
+                        }
                     }
                 } catch (e) {
                     console.warn("State read error:", e);
@@ -400,7 +418,8 @@
                 const touchControlsEl = document.getElementById("config-touch-controls");
                 const cheatsEl = document.getElementById("config-cheats");
                 const lowMemoryEl = document.getElementById("config-lowmem");
-                if (!modeEl || !touchControlsEl || !cheatsEl || !lowMemoryEl) {
+                const fpsEl = document.getElementById("config-fps");
+                if (!modeEl || !touchControlsEl || !cheatsEl || !lowMemoryEl || !fpsEl) {
                     console.error("Missing configuration elements");
                     return;
                 }
@@ -408,11 +427,13 @@
                 const touchControls = touchControlsEl.checked;
                 const cheats = cheatsEl.checked;
                 const lowMemory = lowMemoryEl.checked;
+                const fps = fpsEl.value;
                 const settings = {
                     mode,
                     touchControls,
                     cheats,
-                    lowMemory
+                    lowMemory,
+                    fps
                 };
                 try {
                     localStorage.setItem("vcsky.settings", JSON.stringify(settings));
@@ -420,10 +441,11 @@
                     localStorage.setItem("vcsky.touchControls", touchControls ? "1" : "0");
                     localStorage.setItem("vcsky.cheats", cheats ? "1" : "0");
                     localStorage.setItem("vcsky.lowMemory", lowMemory ? "1" : "0");
+                    localStorage.setItem("vcsky.fps", fps);
                 } catch (e) {
                     console.error("Sync error:", e);
                 }
-                window.location.href = "game.html";
+                window.location.href = "game.html?fps=" + fps;
             }
 
             document.getElementById("play-btn").addEventListener("click", saveAndPlay);

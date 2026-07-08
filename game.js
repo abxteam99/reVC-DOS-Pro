@@ -100,9 +100,39 @@ function setMenuModeActive(active) {
     }
 }
 
-// ============================================================
-// GAME START – uses file-loader.js promise
-// ============================================================
+window._cheatApiQueue = [];
+
+window.addEventListener('message', function(event) {
+    if (event.data && (event.data.type === 'apiCall' || event.data.type === 'applyCheat')) {
+        window._cheatApiQueue.push(event);
+    }
+});
+
+function processCheatApiQueue() {
+    while (window._cheatApiQueue.length > 0) {
+        const ev = window._cheatApiQueue.shift();
+        const source = ev.source;
+        try {
+            if (ev.data.type === 'apiCall') {
+                const { id, method, args } = ev.data;
+                const result = typeof window.__gameApi[method] === 'function'
+                    ? window.__gameApi[method](...args)
+                    : undefined;
+                source.postMessage({ type: 'apiResponse', id, result }, '*');
+            } else if (ev.data.type === 'applyCheat') {
+                if (typeof window.typeCheat === 'function') {
+                    window.typeCheat(ev.data.code);
+                }
+            }
+        } catch (e) {
+            console.error('Cheat API error:', e);
+            if (ev.data.type === 'apiCall' && source) {
+                source.postMessage({ type: 'apiResponse', id: ev.data.id, result: undefined }, '*');
+            }
+        }
+    }
+}
+
 function startGame() {
     if (loaderContainer) loaderContainer.style.display = "flex";
     const canvas = document.getElementById('canvas');
@@ -165,7 +195,6 @@ function startGame() {
         if (spinnerElement) spinnerElement.hidden = true;
         setStatus(t("clickToContinue"));
 
-        // Wait for user click/tap before loading the game
         const clickHandler = () => {
             loadGame(dataBuffer, wasmBuffer);
         };
@@ -180,13 +209,9 @@ function startGame() {
     });
 }
 
-// ============================================================
-// LOAD GAME (Emscripten Module)
-// ============================================================
 window.gameReady = false;
 
 async function loadGame(data, wasmBuffer) {
-    // Disable pointer lock on touch devices permanently
     if (isTouch) {
         HTMLCanvasElement.prototype.requestPointerLock = function() {};
     }
@@ -262,6 +287,11 @@ async function loadGame(data, wasmBuffer) {
             };
         }
         if (isTouch) { setTimeout(reapplyTouchControls, 200); }
+
+        // Safe cheat API queue processing
+        if (typeof MainLoop !== 'undefined') {
+            MainLoop.preMainLoop.push(processCheatApiQueue);
+        }
     });
 
     const wrapper = document.getElementById('touch-controls-wrapper');
@@ -270,9 +300,23 @@ async function loadGame(data, wasmBuffer) {
         else { wrapper.style.display = 'none'; }
     }
 
-    // ============================================================
-    //  CONTROL SETUP (inline)
-    // ============================================================
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'visible') {
+            console.log('[Game] Tab became visible – resuming rendering.');
+            const canvasEl = document.getElementById('canvas');
+            if (canvasEl) {
+                canvasEl.width = canvasEl.width;
+                canvasEl.focus();
+            }
+            if (typeof MainLoop !== 'undefined' && MainLoop.running) {
+                MainLoop.scheduler();
+            }
+            if (typeof GLctx !== 'undefined' && GLctx) {
+                GLctx.viewport(0, 0, GLctx.drawingBufferWidth, GLctx.drawingBufferHeight);
+            }
+        }
+    });
+
     if (isTouch) {
         const canvasEl = document.getElementById('canvas');
         if (canvasEl) {
@@ -284,9 +328,6 @@ async function loadGame(data, wasmBuffer) {
         window._emulator = emulator;
         emulator.AddEmulatedGamepad(0, true);
 
-        // ------------------------------------------------------------
-        //  MOVE JOYSTICK
-        // ------------------------------------------------------------
         const moveEl = document.getElementById('move');
         if (moveEl) {
             moveEl.style.position = 'fixed';
@@ -337,6 +378,9 @@ async function loadGame(data, wasmBuffer) {
                     emulator.MoveAxis(0, 0, 0);
                     emulator.MoveAxis(0, 1, 0);
                     knob.style.transform = 'translate(-50%, -50%)';
+                    if (airbreakEnabled) {
+                        keysPressed.w = keysPressed.s = keysPressed.a = keysPressed.d = false;
+                    }
                     return;
                 }
                 if (dist > maxDist) {
@@ -345,19 +389,32 @@ async function loadGame(data, wasmBuffer) {
                 }
                 const normX = dx / maxDist;
                 const normY = dy / maxDist;
-                const clampedX = Math.min(1, Math.max(-1, normX));
-                const clampedY = Math.min(1, Math.max(-1, normY));
 
                 knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
 
-                emulator.MoveAxis(0, 0, clampedX);
-                emulator.MoveAxis(0, 1, clampedY);   // forward
+                if (airbreakEnabled) {
+                    const deadzone = 0.2;
+                    keysPressed.w = normY > deadzone;   // forward
+                    keysPressed.s = normY < -deadzone;  // backward
+                    keysPressed.a = normX > deadzone;   // left
+                    keysPressed.d = normX < -deadzone;  // right
+                    emulator.MoveAxis(0, 0, 0);
+                    emulator.MoveAxis(0, 1, 0);
+                } else {
+                    const clampedX = Math.min(1, Math.max(-1, normX));
+                    const clampedY = Math.min(1, Math.max(-1, normY));
+                    emulator.MoveAxis(0, 0, clampedX);
+                    emulator.MoveAxis(0, 1, clampedY);
+                }
             };
 
             const resetMove = () => {
                 emulator.MoveAxis(0, 0, 0);
                 emulator.MoveAxis(0, 1, 0);
                 knob.style.transform = 'translate(-50%, -50%)';
+                if (airbreakEnabled) {
+                    keysPressed.w = keysPressed.s = keysPressed.a = keysPressed.d = false;
+                }
             };
 
             moveEl.addEventListener('touchstart', (e) => {
@@ -400,9 +457,6 @@ async function loadGame(data, wasmBuffer) {
             }, { passive: true });
         }
 
-        // ------------------------------------------------------------
-        //  LOOK AREA (portrait – user settings)
-        // ------------------------------------------------------------
         const lookEl = document.getElementById('look');
         if (lookEl) {
             lookEl.style.setProperty('pointer-events', 'auto', 'important');
@@ -522,7 +576,6 @@ async function loadGame(data, wasmBuffer) {
             }, { passive: true });
         }
 
-        // ---- BUTTONS ----
         function setupButton(selector, buttonIndex) {
             const el = document.querySelector(selector);
             if (!el) return;
@@ -557,7 +610,6 @@ async function loadGame(data, wasmBuffer) {
         setupButton('.touch-control.fireLeft', 6);
         setupButton('.touch-control.back', 3);
 
-        // ---- HOME BUTTON – redirect to index.html ----
         const homeBtn = document.querySelector('.touch-control.home');
         if (homeBtn) {
             homeBtn.addEventListener('touchstart', function(e) {
@@ -576,7 +628,6 @@ async function loadGame(data, wasmBuffer) {
         menuObserver.observe(document.body, { attributes: true, attributeFilter: ['data-state-menu'] });
         setMenuModeActive(document.body.dataset.stateMenu === '1');
     } else {
-        // Desktop mode – pointer lock allowed
         const canvas = document.getElementById('canvas');
         if (canvas) {
             canvas.style.pointerEvents = 'auto';
@@ -585,6 +636,10 @@ async function loadGame(data, wasmBuffer) {
         console.log('🖱️ Desktop controls ready.');
     }
 
+    // --- Apply desired FPS before the runtime loads ---
+    const urlParams = new URLSearchParams(window.location.search);
+    Module['desiredFPS'] = parseInt(urlParams.get('fps')) || 30;
+
     const script = document.createElement('script');
     script.async = true;
     script.src = 'index.js';
@@ -592,9 +647,6 @@ async function loadGame(data, wasmBuffer) {
     setStatus("");
 }
 
-// ============================================================
-// CHEAT FUNCTIONS & GAME API (with memory safety checks)
-// ============================================================
 const revc_iniDefault = `…`;
 const revc_ini = (() => {
     const cached = localStorage.getItem('vcsky.revc.ini');
@@ -616,97 +668,118 @@ window.typeCheat = async function(code) {
         console.warn('Cheat ignored – runtime not fully initialised.');
         return;
     }
-    if (typeof JSEvents === 'undefined' || !JSEvents.eventHandlers) return;
+    if (typeof JSEvents === 'undefined' || !JSEvents.eventHandlers) {
+        console.warn('JSEvents not available.');
+        return;
+    }
 
     const handlers = JSEvents.eventHandlers.filter(h => {
         if (!h.callbackfunc) return false;
         if (h.eventTypeString !== 'keydown' && h.eventTypeString !== 'keypress' && h.eventTypeString !== 'keyup') return false;
-        const entry = getWasmTableEntry(h.callbackfunc);
-        return typeof entry === 'function';
+        try {
+            const entry = getWasmTableEntry(h.callbackfunc);
+            return typeof entry === 'function';
+        } catch(e) {
+            return false;
+        }
     });
 
+    if (handlers.length === 0) {
+        console.warn('No valid keyboard event handlers found.');
+        return;
+    }
+
     const eventDataPtr = _malloc(160);
+    const fillTemplate = () => {
+        for (let j = 0; j < 160; j++) HEAPU8[eventDataPtr + j] = 0;
+        HEAPF64[eventDataPtr >> 3] = performance.now();
+        const idx = eventDataPtr >> 2;
+        HEAP32[idx + 2] = 0;
+        HEAP8[eventDataPtr + 12] = 0;
+        HEAP8[eventDataPtr + 13] = 0;
+        HEAP8[eventDataPtr + 14] = 0;
+        HEAP8[eventDataPtr + 15] = 0;
+        HEAP8[eventDataPtr + 16] = 0;
+    };
+
     for (let i = 0; i < code.length; i++) {
         const char = code[i].toUpperCase();
         const keyCode = char.charCodeAt(0);
-        const fillBuffer = () => {
-            for (let j = 0; j < 160; j++) HEAPU8[eventDataPtr + j] = 0;
-            HEAPF64[eventDataPtr >> 3] = performance.now();
-            const idx = eventDataPtr >> 2;
-            HEAP32[idx + 5] = keyCode;
-            HEAP32[idx + 6] = keyCode;
-            HEAP32[idx + 7] = keyCode;
-            stringToUTF8(char, eventDataPtr + 32, 32);
-            stringToUTF8('Key' + char, eventDataPtr + 64, 32);
-            stringToUTF8(char, eventDataPtr + 96, 32);
-        };
+
+        fillTemplate();
+        const idx = eventDataPtr >> 2;
+        HEAP32[idx + 5] = keyCode;
+        HEAP32[idx + 6] = keyCode;
+        HEAP32[idx + 7] = keyCode;
+        stringToUTF8(char, eventDataPtr + 32, 32);
+        stringToUTF8('Key' + char, eventDataPtr + 64, 32);
+        stringToUTF8(char, eventDataPtr + 96, 32);
 
         for (const h of handlers) {
-            fillBuffer();
-            try { if (h.eventTypeString === 'keydown') getWasmTableEntry(h.callbackfunc)(h.eventTypeId, eventDataPtr, h.userData); } catch(e) {}
-            fillBuffer();
-            try { if (h.eventTypeString === 'keypress') getWasmTableEntry(h.callbackfunc)(h.eventTypeId, eventDataPtr, h.userData); } catch(e) {}
-            fillBuffer();
-            try { if (h.eventTypeString === 'keyup') getWasmTableEntry(h.callbackfunc)(h.eventTypeId, eventDataPtr, h.userData); } catch(e) {}
+            if (!h.callbackfunc) continue;
+            try {
+                const func = getWasmTableEntry(h.callbackfunc);
+                if (typeof func === 'function') {
+                    if (h.eventTypeString === 'keydown') func(h.eventTypeId, eventDataPtr, h.userData);
+                    if (h.eventTypeString === 'keypress') func(h.eventTypeId, eventDataPtr, h.userData);
+                    if (h.eventTypeString === 'keyup') func(h.eventTypeId, eventDataPtr, h.userData);
+                }
+            } catch(e) {
+                console.warn('Cheat: handler call failed:', e);
+            }
         }
-        await new Promise(r => setTimeout(r, 5));
+        await new Promise(r => setTimeout(r, 50));
     }
     _free(eventDataPtr);
+    console.log('Cheat typed successfully:', code);
 };
 
 window._scanMemory = function(value, type) {
     const results = [];
-    const view = new DataView(HEAPU8.buffer);
-    const bufferLen = view.buffer.byteLength;
+    const MAX_SCAN_BYTES = 128 * 1024 * 1024;
+    const buffer = HEAPU8.buffer;
+    const bufferLen = Math.min(buffer.byteLength, MAX_SCAN_BYTES);
     const step = (type === 'i8') ? 1 : 4;
-    for (let i = 0; i < bufferLen - 8; i += step) {
-        let match = false;
-        let foundType = type;
+
+    const u8 = new Uint8Array(buffer, 0, bufferLen);
+    const i32 = new Int32Array(buffer, 0, bufferLen >> 2);
+    const f32 = new Float32Array(buffer, 0, bufferLen >> 2);
+    const i16 = new Int16Array(buffer, 0, bufferLen >> 1);
+
+    for (let i = 0; i < bufferLen - 8 && results.length < 10000; i += step) {
+        let match = false, foundType = type;
         if (type === 'any') {
-            try {
-                const i32 = view.getInt32(i, true);
-                if (Math.abs(i32 - value) <= 0.5) { match = true; foundType = 'i32'; }
-            } catch(e) {}
-            if (!match) {
-                try {
-                    const f32 = view.getFloat32(i, true);
-                    if (isFinite(f32) && Math.abs(f32 - value) <= 0.5) { match = true; foundType = 'f32'; }
-                } catch(e) {}
-            }
-            if (!match) {
-                try {
-                    const i16 = view.getInt16(i, true);
-                    if (Math.abs(i16 - value) <= 0.5) { match = true; foundType = 'i16'; }
-                } catch(e) {}
-            }
-            if (!match) {
-                try {
-                    const i8 = view.getInt8(i);
-                    if (Math.abs(i8 - value) <= 0.5) { match = true; foundType = 'i8'; }
-                } catch(e) {}
+            const intVal = i32[i >> 2];
+            if (Math.abs(intVal - value) <= 0.5) { match = true; foundType = 'i32'; }
+            else {
+                const floatVal = f32[i >> 2];
+                if (isFinite(floatVal) && Math.abs(floatVal - value) <= 0.5) { match = true; foundType = 'f32'; }
+                else {
+                    const shortVal = i16[i >> 1];
+                    if (Math.abs(shortVal - value) <= 0.5) { match = true; foundType = 'i16'; }
+                    else {
+                        const byteVal = u8[i];
+                        if (Math.abs(byteVal - value) <= 0.5) { match = true; foundType = 'i8'; }
+                    }
+                }
             }
         } else {
-            try {
-                switch(type) {
-                    case 'i32': match = Math.abs(view.getInt32(i, true) - value) <= 0.5; break;
-                    case 'f32': match = isFinite(view.getFloat32(i, true)) && Math.abs(view.getFloat32(i, true) - value) <= 0.5; break;
-                    case 'i16': match = Math.abs(view.getInt16(i, true) - value) <= 0.5; break;
-                    case 'i8': match = Math.abs(view.getInt8(i) - value) <= 0.5; break;
-                }
-            } catch(e) {}
+            switch (type) {
+                case 'i32': match = Math.abs(i32[i >> 2] - value) <= 0.5; break;
+                case 'f32': match = isFinite(f32[i >> 2]) && Math.abs(f32[i >> 2] - value) <= 0.5; break;
+                case 'i16': match = Math.abs(i16[i >> 1] - value) <= 0.5; break;
+                case 'i8':  match = Math.abs(u8[i] - value) <= 0.5; break;
+            }
         }
         if (match) {
             let currentVal;
-            try {
-                switch(foundType) {
-                    case 'i32': currentVal = view.getInt32(i, true); break;
-                    case 'f32': currentVal = view.getFloat32(i, true); break;
-                    case 'i16': currentVal = view.getInt16(i, true); break;
-                    case 'i8': currentVal = view.getInt8(i); break;
-                }
-            } catch(e) { continue; }
+            switch (foundType) {
+                case 'i32': currentVal = i32[i >> 2]; break;
+                case 'f32': currentVal = f32[i >> 2]; break;
+                case 'i16': currentVal = i16[i >> 1]; break;
+                case 'i8':  currentVal = u8[i]; break;
+            }
             results.push({ addr: i, type: foundType, lastVal: currentVal });
-            if (results.length > 10000) break;
         }
     }
     return results;
@@ -746,12 +819,14 @@ window.toggleGodMode = function(enable) {
 };
 
 let airbreakEnabled = false;
-let airbreakInterval = null;
-
+let airbreakCallbackAdded = false;
 const keysPressed = { w: false, s: false, a: false, d: false, space: false, shift: false };
 
 function airbreakLoop() {
     if (!airbreakEnabled) return;
+    // Don't run in cutscenes or menus
+    if (document.body.dataset.stateCutscene === '1' || document.body.dataset.stateMenu === '1') return;
+
     try {
         const view = new DataView(HEAPU8.buffer);
         const bufLen = view.buffer.byteLength;
@@ -761,11 +836,16 @@ function airbreakLoop() {
         const pedAddr = view.getInt32(pedPtrAddr, true);
         if (pedAddr <= 0 || pedAddr + 0x400 > bufLen) return;
 
-        const posAddr = pedAddr + 0x34;
+        // Quick sanity check: health must be a valid positive number
         const healthAddr = pedAddr + 0x350;
+        if (healthAddr + 4 > bufLen) return;
+        const health = view.getFloat32(healthAddr, true);
+        if (health <= 0 || health > 9999) return; // not the real player anymore
+
+        const posAddr = pedAddr + 0x34;
         const speedAddr = pedAddr + 0x74;
 
-        if (posAddr + 12 > bufLen || healthAddr + 4 > bufLen || speedAddr + 12 > bufLen) return;
+        if (posAddr + 12 > bufLen || speedAddr + 12 > bufLen) return;
 
         let x = view.getFloat32(posAddr, true);
         let y = view.getFloat32(posAddr + 4, true);
@@ -776,7 +856,7 @@ function airbreakLoop() {
             try { heading = view.getFloat32(pedAddr + 0x24, true); } catch(e) {}
         }
 
-        const speed = parseFloat(localStorage.getItem('cheat-fly-speed')) || 2.0;
+        const speed = parseFloat(localStorage.getItem('cheat-fly-speed')) || 1.0;
 
         let moved = false;
         if (heading) {
@@ -812,16 +892,21 @@ window.toggleAirBrake = function(enable) {
     else airbreakEnabled = !airbreakEnabled;
 
     if (airbreakEnabled) {
-        if (!airbreakInterval) {
-            airbreakInterval = setInterval(airbreakLoop, 16);
+        if (!airbreakCallbackAdded && typeof MainLoop !== 'undefined') {
+            MainLoop.preMainLoop.push(airbreakLoop);
+            airbreakCallbackAdded = true;
         }
     } else {
-        if (airbreakInterval) {
-            clearInterval(airbreakInterval);
-            airbreakInterval = null;
+        if (airbreakCallbackAdded) {
+            const idx = MainLoop.preMainLoop.indexOf(airbreakLoop);
+            if (idx !== -1) MainLoop.preMainLoop.splice(idx, 1);
+            airbreakCallbackAdded = false;
         }
         keysPressed.w = keysPressed.s = keysPressed.a = keysPressed.d = false;
         keysPressed.space = keysPressed.shift = false;
+
+        // Reset stored speed to normal when airbreak is turned off
+        localStorage.setItem('cheat-fly-speed', '1.0');
     }
     if (typeof window._updateAirBreakUI === 'function') {
         window._updateAirBreakUI(airbreakEnabled);
@@ -832,6 +917,15 @@ window.toggleAirBrake = function(enable) {
 window.setFlySpeed = function(speed) {
     console.log('Fly speed set to', speed);
     localStorage.setItem('cheat-fly-speed', String(speed));
+};
+
+window.resetGameSpeed = function() {
+    const view = new DataView(HEAPU8.buffer);
+    const timescaleAddr = 0xA10B20;   // common for GTA:VC – adjust if needed
+    if (timescaleAddr + 4 <= view.buffer.byteLength) {
+        view.setFloat32(timescaleAddr, 1.0, true);
+        console.log('⏱️ Game timescale reset to 1.0');
+    }
 };
 
 window.readMemory = function(addr, type) {
@@ -892,6 +986,7 @@ window.clearLogs = function() {
     if (window.requestLog) window.requestLog.length = 0;
 };
 
+// ── openCheatPopup with 3-second delayed cheat execution after close ──
 window.openCheatPopup = function() {
     if (window.cheatWindow && !window.cheatWindow.closed) {
         window.cheatWindow.focus();
@@ -903,8 +998,35 @@ window.openCheatPopup = function() {
     const top = (window.innerHeight - height) / 2;
     const features = `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`;
     window.cheatWindow = window.open('cheats.html', 'CheatEngine', features);
-    if (window.cheatWindow) window.cheatWindow.focus();
-    else window.open('cheats.html', '_blank');
+    if (window.cheatWindow) {
+        window.cheatWindow.focus();
+        const checkClosed = setInterval(() => {
+            if (window.cheatWindow.closed) {
+                clearInterval(checkClosed);
+                const canvas = document.getElementById('canvas');
+                if (canvas) {
+                    canvas.focus();
+                    if (typeof MainLoop !== 'undefined' && MainLoop.running) {
+                        MainLoop.scheduler();
+                    }
+                }
+                // Apply pending cheat with a 3-second delay
+                if (window._pendingCheat) {
+                    const code = window._pendingCheat;
+                    window._pendingCheat = null;
+                    console.log('[Game] Pending cheat found, executing in 3s:', code);
+                    setTimeout(() => {
+                        if (typeof window.typeCheat === 'function') {
+                            window.typeCheat(code);
+                        }
+                    }, 3000);
+                }
+                console.log('[Game] Cheat popup closed – refocused.');
+            }
+        }, 500);
+    } else {
+        window.open('cheats.html', '_blank');
+    }
 };
 
 window.__gameApi = {
@@ -936,19 +1058,15 @@ window.__gameApi = {
         return window._errorLogs.map(e => `[${e.timestamp}] ${e.type}: ${e.message}`);
     },
     clearLogs: window.clearLogs,
+    resetGameSpeed: window.resetGameSpeed,
     cheatWindowClosed: function() { console.log('Cheat popup closed.'); }
 };
 
 window.setMenuModeActive = setMenuModeActive;
 window.reapplyTouchControls = reapplyTouchControls;
 
-// ============================================================
-// AIRBREAK CONTROLS – touch / desktop strictly separated
-// ============================================================
+// ─── AirBreak UI (vertical buttons + FLY toggle only) ───
 (function() {
-    const overlay = document.getElementById('airbreak-overlay');
-    const joystick = document.getElementById('airbreak-joystick');
-    const knob = document.getElementById('airbreak-joystick-knob');
     const verticalBtns = document.getElementById('airbreak-vertical-btns');
     const upBtn = document.getElementById('airbreak-up-btn');
     const downBtn = document.getElementById('airbreak-down-btn');
@@ -964,14 +1082,7 @@ window.reapplyTouchControls = reapplyTouchControls;
             el.style.pointerEvents = 'auto';
         }
     };
-    [overlay, joystick, knob, verticalBtns, upBtn, downBtn, flyToggleBtn].forEach(setElementInteraction);
-
-    let joystickActive = false;
-    let joystickCenterX = 0, joystickCenterY = 0;
-    const joystickRadius = 60;
-    const deadzone = 15;
-    let activePointerId = null;
-    let activeTouchId = null;
+    [verticalBtns, upBtn, downBtn, flyToggleBtn].forEach(setElementInteraction);
 
     let flyBtnDragging = false;
     let flyBtnStartX = 0, flyBtnStartY = 0;
@@ -988,111 +1099,19 @@ window.reapplyTouchControls = reapplyTouchControls;
     function updateAirBreakUI(enable) {
         airbreakEnabled = enable;
         if (airbreakEnabled) {
-            overlay.classList.add('active');
             verticalBtns.classList.add('active');
             flyToggleBtn.classList.add('visible');
             flyToggleBtn.classList.add('active');
             flyToggleBtn.textContent = 'STOP';
         } else {
-            overlay.classList.remove('active');
             verticalBtns.classList.remove('active');
             flyToggleBtn.classList.remove('active');
             flyToggleBtn.classList.remove('visible');
-            if (knob) knob.style.transform = 'translate(-50%, -50%)';
-            keysPressed.w = false;
-            keysPressed.s = false;
-            keysPressed.a = false;
-            keysPressed.d = false;
+            keysPressed.w = keysPressed.s = keysPressed.a = keysPressed.d = false;
+            keysPressed.space = keysPressed.shift = false;
         }
     }
     window._updateAirBreakUI = updateAirBreakUI;
-
-    function handleJoystickMove(clientX, clientY) {
-        if (!joystickActive) return;
-        let deltaX = clientX - joystickCenterX;
-        let deltaY = clientY - joystickCenterY;
-        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-        if (distance > joystickRadius) {
-            deltaX = (deltaX / distance) * joystickRadius;
-            deltaY = (deltaY / distance) * joystickRadius;
-        }
-        if (knob) {
-            knob.style.transform = `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px))`;
-        }
-        keysPressed.w = deltaY < -deadzone;
-        keysPressed.s = deltaY > deadzone;
-        keysPressed.a = deltaX < -deadzone;
-        keysPressed.d = deltaX > deadzone;
-    }
-
-    function joystickStart(clientX, clientY, pointerId, touchId) {
-        if (!airbreakEnabled) return;
-        joystickActive = true;
-        activePointerId = pointerId || null;
-        activeTouchId = touchId || null;
-        const rect = joystick.getBoundingClientRect();
-        joystickCenterX = rect.left + rect.width / 2;
-        joystickCenterY = rect.top + rect.height / 2;
-        if (!isTouch && pointerId !== undefined && pointerId !== null) {
-            try { joystick.setPointerCapture(pointerId); } catch(e) {}
-        }
-        handleJoystickMove(clientX, clientY);
-    }
-
-    function joystickEnd() {
-        joystickActive = false;
-        if (!isTouch && activePointerId !== null) {
-            try { joystick.releasePointerCapture(activePointerId); } catch(e) {}
-        }
-        activePointerId = null;
-        activeTouchId = null;
-        if (knob) knob.style.transform = 'translate(-50%, -50%)';
-        keysPressed.w = false;
-        keysPressed.s = false;
-        keysPressed.a = false;
-        keysPressed.d = false;
-    }
-
-    if (joystick) {
-        if (isTouch) {
-            joystick.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const t = e.changedTouches[0];
-                if (t) joystickStart(t.clientX, t.clientY, null, t.identifier);
-            }, { passive: false });
-            joystick.addEventListener('touchmove', (e) => {
-                if (!joystickActive) return;
-                e.preventDefault();
-                const t = e.changedTouches[0];
-                if (t && activeTouchId === t.identifier) handleJoystickMove(t.clientX, t.clientY);
-            }, { passive: false });
-            joystick.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                joystickEnd();
-            }, { passive: false });
-            joystick.addEventListener('touchcancel', () => joystickEnd(), { passive: false });
-        } else {
-            joystick.addEventListener('pointerdown', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                joystickStart(e.clientX, e.clientY, e.pointerId, null);
-            });
-            joystick.addEventListener('pointermove', (e) => {
-                if (joystickActive && activePointerId === e.pointerId) {
-                    e.preventDefault();
-                    handleJoystickMove(e.clientX, e.clientY);
-                }
-            });
-            joystick.addEventListener('pointerup', (e) => {
-                if (activePointerId === e.pointerId) {
-                    e.preventDefault();
-                    joystickEnd();
-                }
-            });
-            joystick.addEventListener('pointercancel', () => joystickEnd());
-        }
-    }
 
     function setupAirButton(btn, key) {
         if (!btn) return;
@@ -1208,7 +1227,7 @@ window.reapplyTouchControls = reapplyTouchControls;
     }
 
     updateAirBreakUI(false);
-    console.log('✈️ AirBreak controls loaded (' + (isTouch ? 'touch' : 'desktop') + ').');
+    console.log('✈️ AirBreak controls loaded – move joystick integrated (' + (isTouch ? 'touch' : 'desktop') + ').');
 })();
 
 setTimeout(startGame, 100);
