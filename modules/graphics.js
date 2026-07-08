@@ -642,47 +642,18 @@ var _eglQueryString = (display, name) => {
     return ret
 };
 
-// Original swap function (kept for reference, not used)
-function eglSwapBuffersOriginal(dpy, surface) {
-    if (!EGL.defaultDisplayInitialized) {
-        EGL.setErrorCode(12289)
-    } else if (!GLctx) {
-        EGL.setErrorCode(12290)
-    } else if (GLctx.isContextLost()) {
-        EGL.setErrorCode(12302)
-    } else {
-        EGL.setErrorCode(12288);
-        return 1
-    }
-    return 0
-}
-
-// FIXED: Real _eglSwapBuffers that presents frames and schedules the next animation frame
 var _eglSwapBuffers = (dpy, surface) => {
     if (!EGL.defaultDisplayInitialized) {
         EGL.setErrorCode(12289);
-        return 0;
-    }
-    if (!GLctx) {
+    } else if (!GLctx) {
         EGL.setErrorCode(12290);
-        return 0;
-    }
-    if (GLctx.isContextLost()) {
+    } else if (GLctx.isContextLost()) {
         EGL.setErrorCode(12302);
-        return 0;
+    } else {
+        EGL.setErrorCode(12288);
+        return 1;
     }
-    // If the context is on an OffscreenCanvas, commit the rendering
-    if (GLctx.commit) {
-        GLctx.commit();
-    }
-    // Schedule the next animation frame via MainLoop (always available from runtime.js)
-    if (typeof MainLoop !== 'undefined' && MainLoop.requestAnimationFrame) {
-        MainLoop.requestAnimationFrame(() => {});
-    } else if (typeof requestAnimationFrame !== 'undefined') {
-        requestAnimationFrame(() => {});
-    }
-    EGL.setErrorCode(12288);
-    return 1;
+    return 0;
 };
 
 var _eglSwapInterval = (display, interval) => {
@@ -716,11 +687,6 @@ var _eglWaitNative = nativeEngineId => {
     EGL.setErrorCode(12288);
     return 1
 };
-
-// ============================================================
-// THE REMAINDER OF THE FILE: all _emscripten_gl* functions
-// (unchanged from the original)
-// ============================================================
 
 var _emscripten_glActiveTexture = x0 => GLctx.activeTexture(x0);
 var _emscripten_glAttachShader = (program, shader) => {

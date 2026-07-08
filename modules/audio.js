@@ -2189,8 +2189,7 @@ var _alIsEnabled = param => {
         return 0
     }
     switch (param) {
-        case 512:
-            return AL.currentCtx.sourceDistanceModel ? 0 : 1;
+        case 512: return AL.currentCtx.sourceDistanceModel ? 1 : 0;
         default:
             AL.currentCtx.err = 40962;
             return 0
@@ -2678,23 +2677,25 @@ var _alcCloseDevice = deviceId => {
     AL.freeIds.push(deviceId);
     return 1
 };
+
+
 var autoResumeAudioContext = ctx => {
     for (var event of ["keydown", "mousedown", "touchstart"]) {
         for (var element of [document, document.getElementById("canvas")]) {
             element?.addEventListener(event, () => {
-                if (ctx.state === "suspended") ctx.resume()
-            }, {
-                once: true
-            })
+                if (ctx.state === "suspended") ctx.resume().catch(() => {});
+            }, { once: true });
         }
     }
     var wrapper = document.getElementById('touch-controls-wrapper');
     if (wrapper) {
         wrapper.addEventListener('touchstart', () => {
-            if (ctx.state === 'suspended') ctx.resume();
+            if (ctx.state === 'suspended') ctx.resume().catch(() => {});
         }, { once: true });
     }
 };
+
+
 var _alcCreateContext = (deviceId, pAttrList) => {
     if (!(deviceId in AL.deviceRefCounts)) {
         AL.alcErr = 40961;

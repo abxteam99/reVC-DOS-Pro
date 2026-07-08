@@ -1,4 +1,4 @@
-// Events.js
+// events.js – with preload plugins, fullscreen cheat panel, and selector safety
 
 var Browser = {
     useWebGL: false,
@@ -13,9 +13,108 @@ var Browser = {
         if (Browser.initted) return;
         Browser.initted = true;
 
+        // ============================================================
+        // PRELOAD PLUGINS (image + audio) – required for asset decoding
+        // ============================================================
+        var imagePlugin = {};
+        imagePlugin["canHandle"] = function imagePlugin_canHandle(name) {
+            return !Module["noImageDecoding"] && /\.(jpg|jpeg|png|bmp|webp)$/i.test(name);
+        };
+        imagePlugin["handle"] = async function imagePlugin_handle(byteArray, name) {
+            // If the array is empty (missing file), resolve with a 1×1 grey canvas
+            if (!byteArray || byteArray.length === 0) {
+                var canvas = document.createElement("canvas");
+                canvas.width = canvas.height = 1;
+                var ctx = canvas.getContext("2d");
+                ctx.fillStyle = "#808080";   // grey
+                ctx.fillRect(0, 0, 1, 1);
+                Browser.preloadedImages[name] = canvas;
+                return byteArray;
+            }
+
+            var b = new Blob([byteArray], { type: Browser.getMimetype(name) });
+            if (b.size !== byteArray.length) {
+                b = new Blob([new Uint8Array(byteArray).buffer], { type: Browser.getMimetype(name) });
+            }
+            var url = URL.createObjectURL(b);
+            return new Promise((resolve, reject) => {
+                var img = new Image;
+                img.onload = () => {
+                    var canvas = document.createElement("canvas");
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    var ctx = canvas.getContext("2d");
+                    ctx.drawImage(img, 0, 0);
+                    Browser.preloadedImages[name] = canvas;
+                    URL.revokeObjectURL(url);
+                    resolve(byteArray);
+                };
+                img.onerror = event => {
+                    // Fallback to 1×1 grey canvas on error
+                    var canvas = document.createElement("canvas");
+                    canvas.width = canvas.height = 1;
+                    var ctx = canvas.getContext("2d");
+                    ctx.fillStyle = "#808080";
+                    ctx.fillRect(0, 0, 1, 1);
+                    Browser.preloadedImages[name] = canvas;
+                    URL.revokeObjectURL(url);
+                    resolve(byteArray);   // always resolve, never reject
+                };
+                img.src = url;
+            });
+        };
+        preloadPlugins.push(imagePlugin);
+
+        var audioPlugin = {};
+        audioPlugin["canHandle"] = function audioPlugin_canHandle(name) {
+            return !Module["noAudioDecoding"] && name.slice(-4) in {
+                ".ogg": 1,
+                ".wav": 1,
+                ".mp3": 1
+            };
+        };
+        audioPlugin["handle"] = async function audioPlugin_handle(byteArray, name) {
+            // If the array is empty, create a silent Audio element
+            if (!byteArray || byteArray.length === 0) {
+                var dummy = new Audio();
+                // Minimal silent WAV (base64)
+                dummy.src = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
+                Browser.preloadedAudios[name] = dummy;
+                return byteArray;
+            }
+
+            return new Promise((resolve, reject) => {
+                var done = false;
+
+                function finish(audio) {
+                    if (done) return;
+                    done = true;
+                    Browser.preloadedAudios[name] = audio;
+                    resolve(byteArray);
+                }
+                var b = new Blob([byteArray], { type: Browser.getMimetype(name) });
+                var url = URL.createObjectURL(b);
+                var audio = new Audio;
+                audio.addEventListener("canplaythrough", () => finish(audio), false);
+                audio.onerror = function audio_onerror(event) {
+                    if (done) return;
+                    // Fallback to silent Audio
+                    var dummy = new Audio();
+                    dummy.src = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
+                    finish(dummy);
+                };
+                audio.src = url;
+                safeSetTimeout(() => { finish(audio); }, 1e4);
+            });
+        };
+        preloadPlugins.push(audioPlugin);
+
+        // ----------------------------------------------------------
+        // ORIGINAL Browser.init code continues below
+        // ----------------------------------------------------------
         function pointerLockChange() {
             var canvas = Browser.getCanvas();
-            Browser.pointerLock = document.pointerLockElement === canvas
+            Browser.pointerLock = document.pointerLockElement === canvas;
         }
         var canvas = Browser.getCanvas();
         if (canvas) {
@@ -24,9 +123,9 @@ var Browser = {
                 canvas.addEventListener("click", ev => {
                     if (!Browser.pointerLock && Browser.getCanvas().requestPointerLock) {
                         Browser.getCanvas().requestPointerLock();
-                        ev.preventDefault()
+                        ev.preventDefault();
                     }
-                }, false)
+                }, false);
             }
         }
     },
@@ -42,17 +141,17 @@ var Browser = {
             };
             if (webGLContextAttributes) {
                 for (var attribute in webGLContextAttributes) {
-                    contextAttributes[attribute] = webGLContextAttributes[attribute]
+                    contextAttributes[attribute] = webGLContextAttributes[attribute];
                 }
             }
             if (typeof GL != "undefined") {
                 contextHandle = GL.createContext(canvas, contextAttributes);
                 if (contextHandle) {
-                    ctx = GL.getContext(contextHandle).GLctx
+                    ctx = GL.getContext(contextHandle).GLctx;
                 }
             }
         } else {
-            ctx = canvas.getContext("2d")
+            ctx = canvas.getContext("2d");
         }
         if (!ctx) return null;
         if (setInModule) {
@@ -60,9 +159,9 @@ var Browser = {
             if (useWebGL) GL.makeContextCurrent(contextHandle);
             Browser.useWebGL = useWebGL;
             Browser.moduleContextCreatedCallbacks.forEach(callback => callback());
-            Browser.init()
+            Browser.init();
         }
-        return ctx
+        return ctx;
     },
     fullscreenHandlersInstalled: false,
     lockPointer: undefined,
@@ -76,6 +175,7 @@ var Browser = {
         var canvas = Browser.getCanvas();
         var touchWrapper = document.getElementById('touch-controls-wrapper');
         var touchWrapperOriginalParent = touchWrapper ? touchWrapper.parentNode : null;
+        var cheatUI = document.getElementById('cheat-engine-ui');
 
         function fullscreenChange() {
             Browser.isFullscreen = false;
@@ -85,9 +185,13 @@ var Browser = {
                 if (Browser.lockPointer && !window.__isTouchMode) canvas.requestPointerLock();
                 Browser.isFullscreen = true;
                 if (Browser.resizeCanvas) {
-                    Browser.setFullscreenCanvasSize()
+                    Browser.setFullscreenCanvasSize();
                 } else {
-                    Browser.updateCanvasDimensions(canvas)
+                    Browser.updateCanvasDimensions(canvas);
+                }
+                // Move cheat panel into fullscreen container
+                if (cheatUI && cheatUI.parentNode !== canvasContainer) {
+                    canvasContainer.appendChild(cheatUI);
                 }
             } else {
                 canvasContainer.parentNode.insertBefore(canvas, canvasContainer);
@@ -96,20 +200,24 @@ var Browser = {
                     touchWrapperOriginalParent.appendChild(touchWrapper);
                 }
                 if (Browser.resizeCanvas) {
-                    Browser.setWindowedCanvasSize()
+                    Browser.setWindowedCanvasSize();
                 } else {
-                    Browser.updateCanvasDimensions(canvas)
+                    Browser.updateCanvasDimensions(canvas);
+                }
+                // Move cheat panel back to body
+                if (cheatUI && cheatUI.parentNode !== document.body) {
+                    document.body.appendChild(cheatUI);
                 }
             }
             Module["onFullScreen"]?.(Browser.isFullscreen);
-            Module["onFullscreen"]?.(Browser.isFullscreen)
+            Module["onFullscreen"]?.(Browser.isFullscreen);
         }
         if (!Browser.fullscreenHandlersInstalled) {
             Browser.fullscreenHandlersInstalled = true;
             document.addEventListener("fullscreenchange", fullscreenChange, false);
             document.addEventListener("mozfullscreenchange", fullscreenChange, false);
             document.addEventListener("webkitfullscreenchange", fullscreenChange, false);
-            document.addEventListener("MSFullscreenChange", fullscreenChange, false)
+            document.addEventListener("MSFullscreenChange", fullscreenChange, false);
         }
         var canvasContainer = document.createElement("div");
         canvasContainer.classList.add("fs-container");
@@ -118,16 +226,19 @@ var Browser = {
         if (touchWrapper) {
             canvasContainer.appendChild(touchWrapper);
         }
+        if (cheatUI) {
+            canvasContainer.appendChild(cheatUI);
+        }
         canvasContainer.requestFullscreen = canvasContainer["requestFullscreen"] || canvasContainer["mozRequestFullScreen"] || canvasContainer["msRequestFullscreen"] || (canvasContainer["webkitRequestFullscreen"] ? () => canvasContainer["webkitRequestFullscreen"](Element["ALLOW_KEYBOARD_INPUT"]) : null) || (canvasContainer["webkitRequestFullScreen"] ? () => canvasContainer["webkitRequestFullScreen"](Element["ALLOW_KEYBOARD_INPUT"]) : null);
-        canvasContainer.requestFullscreen()
+        canvasContainer.requestFullscreen();
     },
     exitFullscreen() {
         if (!Browser.isFullscreen) {
-            return false
+            return false;
         }
         var CFS = document["exitFullscreen"] || document["cancelFullScreen"] || document["mozCancelFullScreen"] || document["msExitFullscreen"] || document["webkitCancelFullScreen"] || (() => {});
         CFS.apply(document, []);
-        return true
+        return true;
     },
     safeSetTimeout: (func, timeout) => safeSetTimeout(func, timeout),
     getMimetype: (name) => ({
@@ -141,10 +252,10 @@ var Browser = {
     })[name.slice(name.lastIndexOf(".") + 1)],
     getUserMedia(func) {
         window.getUserMedia ||= navigator["getUserMedia"] || navigator["mozGetUserMedia"];
-        window.getUserMedia(func)
+        window.getUserMedia(func);
     },
-    getMovementX(event) { return event["movementX"] || event["mozMovementX"] || event["webkitMovementX"] || 0 },
-    getMovementY(event) { return event["movementY"] || event["mozMovementY"] || event["webkitMovementY"] || 0 },
+    getMovementX(event) { return event["movementX"] || event["mozMovementX"] || event["webkitMovementX"] || 0; },
+    getMovementY(event) { return event["movementY"] || event["mozMovementY"] || event["webkitMovementY"] || 0; },
     getMouseWheelDelta(event) {
         var delta = 0;
         switch (event.type) {
@@ -156,12 +267,12 @@ var Browser = {
                     case 0: delta /= 100; break;
                     case 1: delta /= 3; break;
                     case 2: delta *= 80; break;
-                    default: abort("unrecognized mouse wheel delta mode: " + event.deltaMode)
+                    default: abort("unrecognized mouse wheel delta mode: " + event.deltaMode);
                 }
                 break;
-            default: abort("unrecognized mouse wheel event: " + event.type)
+            default: abort("unrecognized mouse wheel event: " + event.type);
         }
-        return delta
+        return delta;
     },
     mouseX: 0,
     mouseY: 0,
@@ -178,25 +289,25 @@ var Browser = {
         var adjustedY = pageY - (scrollY + rect.top);
         adjustedX = adjustedX * (canvas.width / rect.width);
         adjustedY = adjustedY * (canvas.height / rect.height);
-        return { x: adjustedX, y: adjustedY }
+        return { x: adjustedX, y: adjustedY };
     },
     setMouseCoords(pageX, pageY) {
         const { x, y } = Browser.calculateMouseCoords(pageX, pageY);
         Browser.mouseMovementX = x - Browser.mouseX;
         Browser.mouseMovementY = y - Browser.mouseY;
         Browser.mouseX = x;
-        Browser.mouseY = y
+        Browser.mouseY = y;
     },
     calculateMouseEvent(event) {
         if (Browser.pointerLock) {
             if (event.type != "mousemove" && "mozMovementX" in event) {
-                Browser.mouseMovementX = Browser.mouseMovementY = 0
+                Browser.mouseMovementX = Browser.mouseMovementY = 0;
             } else {
                 Browser.mouseMovementX = Browser.getMovementX(event);
-                Browser.mouseMovementY = Browser.getMovementY(event)
+                Browser.mouseMovementY = Browser.getMovementY(event);
             }
             Browser.mouseX += Browser.mouseMovementX;
-            Browser.mouseY += Browser.mouseMovementY
+            Browser.mouseY += Browser.mouseMovementY;
         } else {
             if (event.type === "touchstart" || event.type === "touchend" || event.type === "touchmove") {
                 var touch = event.touches[0] || event.changedTouches[0];
@@ -204,12 +315,12 @@ var Browser = {
                 var coords = Browser.calculateMouseCoords(touch.pageX, touch.pageY);
                 if (event.type === "touchstart") {
                     Browser.lastTouches[touch.identifier] = coords;
-                    Browser.touches[touch.identifier] = coords
+                    Browser.touches[touch.identifier] = coords;
                 } else if (event.type === "touchend" || event.type === "touchmove") {
                     var last = Browser.touches[touch.identifier];
                     last ||= coords;
                     Browser.lastTouches[touch.identifier] = last;
-                    Browser.touches[touch.identifier] = coords
+                    Browser.touches[touch.identifier] = coords;
                 }
                 if (event.touches.length > 0) {
                     var firstTouch = event.touches[0];
@@ -223,20 +334,20 @@ var Browser = {
                     delete Browser.touches[touch.identifier];
                     delete Browser.lastTouches[touch.identifier];
                 }
-                return
+                return;
             }
-            Browser.setMouseCoords(event.pageX, event.pageY)
+            Browser.setMouseCoords(event.pageX, event.pageY);
         }
     },
     resizeListeners: [],
     updateResizeListeners() {
         var canvas = Browser.getCanvas();
-        Browser.resizeListeners.forEach(listener => listener(canvas.width, canvas.height))
+        Browser.resizeListeners.forEach(listener => listener(canvas.width, canvas.height));
     },
     setCanvasSize(width, height, noUpdates) {
         var canvas = Browser.getCanvas();
         Browser.updateCanvasDimensions(canvas, width, height);
-        if (!noUpdates) Browser.updateResizeListeners()
+        if (!noUpdates) Browser.updateResizeListeners();
     },
     windowedWidth: 0,
     windowedHeight: 0,
@@ -244,48 +355,48 @@ var Browser = {
         if (typeof SDL != "undefined") {
             var flags = HEAPU32[SDL.screen >> 2];
             flags = flags | 8388608;
-            HEAP32[SDL.screen >> 2] = flags
+            HEAP32[SDL.screen >> 2] = flags;
         }
         Browser.updateCanvasDimensions(Browser.getCanvas());
-        Browser.updateResizeListeners()
+        Browser.updateResizeListeners();
     },
     setWindowedCanvasSize() {
         if (typeof SDL != "undefined") {
             var flags = HEAPU32[SDL.screen >> 2];
             flags = flags & ~8388608;
-            HEAP32[SDL.screen >> 2] = flags
+            HEAP32[SDL.screen >> 2] = flags;
         }
         Browser.updateCanvasDimensions(Browser.getCanvas());
-        Browser.updateResizeListeners()
+        Browser.updateResizeListeners();
     },
     updateCanvasDimensions(canvas, wNative, hNative) {
         if (wNative && hNative) {
             canvas.widthNative = wNative;
-            canvas.heightNative = hNative
+            canvas.heightNative = hNative;
         } else {
             wNative = canvas.widthNative;
-            hNative = canvas.heightNative
+            hNative = canvas.heightNative;
         }
         var w = wNative;
         var h = hNative;
         if (Module["forcedAspectRatio"] > 0) {
             if (w / h < Module["forcedAspectRatio"]) {
-                w = Math.round(h * Module["forcedAspectRatio"])
+                w = Math.round(h * Module["forcedAspectRatio"]);
             } else {
-                h = Math.round(w / Module["forcedAspectRatio"])
+                h = Math.round(w / Module["forcedAspectRatio"]);
             }
         }
         if (getFullscreenElement() === canvas.parentNode && typeof screen != "undefined") {
             var factor = Math.min(screen.width / w, screen.height / h);
             w = Math.round(w * factor);
-            h = Math.round(h * factor)
+            h = Math.round(h * factor);
         }
         if (Browser.resizeCanvas) {
             if (canvas.width != w) canvas.width = w;
             if (canvas.height != h) canvas.height = h;
             if (typeof canvas.style != "undefined") {
                 canvas.style.removeProperty("width");
-                canvas.style.removeProperty("height")
+                canvas.style.removeProperty("height");
             }
         } else {
             if (canvas.width != wNative) canvas.width = wNative;
@@ -293,10 +404,10 @@ var Browser = {
             if (typeof canvas.style != "undefined") {
                 if (w != wNative || h != hNative) {
                     canvas.style.setProperty("width", w + "px", "important");
-                    canvas.style.setProperty("height", h + "px", "important")
+                    canvas.style.setProperty("height", h + "px", "important");
                 } else {
                     canvas.style.removeProperty("width");
-                    canvas.style.removeProperty("height")
+                    canvas.style.removeProperty("height");
                 }
             }
         }
@@ -423,10 +534,15 @@ var JSEvents = {
         return document.fullscreenEnabled || document.webkitFullscreenEnabled
     }
 };
+
 var specialHTMLTargets = [0, globalThis.document ?? 0, globalThis.window ?? 0];
 var maybeCStringToJsString = cString => cString > 2 ? UTF8ToString(cString) : cString;
 var findEventTarget = target => {
     target = maybeCStringToJsString(target);
+    // If it's a string and looks like GLSL code, reject it
+    if (typeof target === 'string' && (target.length > 256 || target.includes('\n') || target.includes(';'))) {
+        return null;
+    }
     var domElement = specialHTMLTargets[target] || globalThis.document?.querySelector(target);
     return domElement
 };

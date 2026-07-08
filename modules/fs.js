@@ -1,3 +1,7 @@
+// fs.js – duplicates of stringToUTF8, UTF8ToString, lengthBytesUTF8,
+// and stringToUTF8Array removed (they are already defined in runtime.js)
+// Empty dead code in FS.analyzePath also removed.
+
 var PATH = {
     isAbs: path => path.charAt(0) === "/",
     splitPath: filename => {
@@ -126,53 +130,9 @@ var UTF8ArrayToString = (heapOrArray, idx = 0, maxBytesToRead, ignoreNul) => {
     return UTF8Decoder.decode(heapOrArray.buffer ? heapOrArray.subarray(idx, endPtr) : new Uint8Array(heapOrArray.slice(idx, endPtr)))
 };
 var FS_stdin_getChar_buffer = [];
-var lengthBytesUTF8 = str => {
-    var len = 0;
-    for (var i = 0; i < str.length; ++i) {
-        var c = str.charCodeAt(i);
-        if (c <= 127) {
-            len++
-        } else if (c <= 2047) {
-            len += 2
-        } else if (c >= 55296 && c <= 57343) {
-            len += 4;
-            ++i
-        } else {
-            len += 3
-        }
-    }
-    return len
-};
-var stringToUTF8Array = (str, heap, outIdx, maxBytesToWrite) => {
-    if (!(maxBytesToWrite > 0)) return 0;
-    var startIdx = outIdx;
-    var endIdx = outIdx + maxBytesToWrite - 1;
-    for (var i = 0; i < str.length; ++i) {
-        var u = str.codePointAt(i);
-        if (u <= 127) {
-            if (outIdx >= endIdx) break;
-            heap[outIdx++] = u
-        } else if (u <= 2047) {
-            if (outIdx + 1 >= endIdx) break;
-            heap[outIdx++] = 192 | u >> 6;
-            heap[outIdx++] = 128 | u & 63
-        } else if (u <= 65535) {
-            if (outIdx + 2 >= endIdx) break;
-            heap[outIdx++] = 224 | u >> 12;
-            heap[outIdx++] = 128 | u >> 6 & 63;
-            heap[outIdx++] = 128 | u & 63
-        } else {
-            if (outIdx + 3 >= endIdx) break;
-            heap[outIdx++] = 240 | u >> 18;
-            heap[outIdx++] = 128 | u >> 12 & 63;
-            heap[outIdx++] = 128 | u >> 6 & 63;
-            heap[outIdx++] = 128 | u & 63;
-            i++
-        }
-    }
-    heap[outIdx] = 0;
-    return outIdx - startIdx
-};
+
+// (lengthBytesUTF8, stringToUTF8Array, stringToUTF8, UTF8ToString are now taken from runtime.js)
+
 var intArrayFromString = (stringy, dontAddNull, length) => {
     var len = length > 0 ? length : lengthBytesUTF8(stringy) + 1;
     var u8array = new Array(len);
@@ -2216,12 +2176,6 @@ var FS = {
         return ret.object
     },
     analyzePath(path, dontResolveLastLink) {
-        try {
-            var lookup = FS.lookupPath(path, {
-                follow: !dontResolveLastLink
-            });
-            path = lookup.path
-        } catch (e) {}
         var ret = {
             isRoot: false,
             exists: false,
@@ -2506,11 +2460,6 @@ var FS = {
         return node
     }
 };
-var UTF8ToString = (ptr, maxBytesToRead, ignoreNul) => {
-    if (!ptr) return "";
-    var end = findStringEnd(HEAPU8, ptr, maxBytesToRead, ignoreNul);
-    return UTF8Decoder.decode(HEAPU8.subarray(ptr, end))
-};
 var SYSCALLS = {
     DEFAULT_POLLMASK: 5,
     calculateAt(dirfd, path, allowEmpty) {
@@ -2740,7 +2689,7 @@ function ___syscall_fcntl64(fd, cmd, varargs) {
         return -e.errno
     }
 }
-var stringToUTF8 = (str, outPtr, maxBytesToWrite) => stringToUTF8Array(str, HEAPU8, outPtr, maxBytesToWrite);
+// stringToUTF8 is now global from runtime.js, no local definition needed
 
 function ___syscall_getcwd(buf, size) {
     try {
