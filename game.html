@@ -467,6 +467,217 @@
                 padding: 0.5rem 0.6rem;
             }
         }
+        /* ========== CHEAT PANEL OVERLAY ========== */
+        #cheat-engine-ui {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 340px;
+            height: 100vh;
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(15px);
+            color: #eee;
+            font-family: 'Consolas', 'Monaco', monospace;
+            z-index: 100000;
+            display: none;
+            flex-direction: column;
+            border-left: 2px solid #ff00ff;
+            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.8);
+            overflow-y: auto;
+            padding: 20px 20px 100px 20px;
+            user-select: none;
+        }
+        #cheat-engine-ui h1 {
+            font-size: 18px;
+            text-align: left;
+            margin: 0 0 10px 0;
+            color: #ff00ff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #cheat-close-btn {
+            background: transparent;
+            border: none;
+            color: #ff4444;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px;
+        }
+        .ce-tabs {
+            display: flex;
+            border-bottom: 1px solid #333;
+            margin-bottom: 10px;
+        }
+        .ce-tabs button {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #888;
+            padding: 8px;
+            font-size: 12px;
+            text-transform: uppercase;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        .ce-tabs button.active {
+            color: #fff;
+            border-bottom-color: #ff00ff;
+        }
+        .ce-tab-content {
+            display: none;
+        }
+        .ce-tab-content.active {
+            display: block;
+        }
+        .ce-input-row {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 8px;
+        }
+        .ce-input-row input,
+        .ce-input-row select {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #333;
+            color: #fff;
+            padding: 6px 10px;
+            font-size: 12px;
+            outline: none;
+            flex: 1;
+        }
+        .ce-btn-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+            margin-bottom: 8px;
+        }
+        .ce-btn-row button,
+        .cheat-grid button {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #444;
+            color: #ccc;
+            padding: 8px;
+            font-size: 11px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.1s;
+        }
+        .ce-btn-row button:hover,
+        .cheat-grid button:hover {
+            background: rgba(255, 0, 255, 0.2);
+            border-color: #ff00ff;
+            color: #fff;
+        }
+        .results {
+            max-height: 150px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #222;
+            font-size: 11px;
+        }
+        .cheat-cat {
+            font-size: 11px;
+            color: #0ff;
+            margin: 10px 0 5px;
+            text-transform: uppercase;
+        }
+        .cheat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
+        }
+        .switch-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #1a1a2e;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 22px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #333;
+            transition: .2s;
+            border-radius: 22px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .2s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #ff00ff;
+            box-shadow: 0 0 8px rgba(255, 0, 255, 0.4);
+        }
+        input:checked + .slider:before {
+            transform: translateX(18px);
+        }
+        .money-btn {
+            width: 100%;
+            background: rgba(255, 215, 0, 0.1) !important;
+            border: 1px solid #ffd700 !important;
+            color: #ffd700 !important;
+            font-weight: bold;
+            margin: 8px 0;
+        }
+        .log-container {
+            background: #05050a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 8px;
+            max-height: 150px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            margin-top: 6px;
+        }
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+        }
+        .copy-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #444;
+            color: #ccc;
+            padding: 4px 8px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+        }
     </style>
 </head>
 <body data-is-touch="0" data-state-car="0" data-state-car-gun="0" data-state-gun="0" data-state-bike="0" data-state-menu="0" data-state-cutscene="0" data-state-mobring="0" data-state-job="0" data-state-disable-controls="0" data-state-panzer="0" data-state-car-with-weapon="0" data-state-hunter="0" data-state-scope-mode="0" data-state-scope-gun="0">
@@ -533,11 +744,187 @@
         <div><progress id="progress" hidden></progress></div>
     </div>
 
+    <!-- ================= CHEAT ENGINE OVERLAY ================= -->
+    <div id="cheat-engine-ui">
+        <div id="cheat-engine-inner">
+            <h1>
+                Cheat Engine
+                <button id="cheat-close-btn">✕</button>
+            </h1>
+
+            <div class="ce-tabs">
+                <button class="active" data-tab="scanner">Scanner</button>
+                <button data-tab="cheats">Cheats</button>
+                <button data-tab="quick">Quick</button>
+                <button data-tab="debugger">Debugger</button>
+            </div>
+
+            <!-- Scanner tab -->
+            <div id="tab-scanner" class="ce-tab-content active">
+                <div class="ce-input-row">
+                    <input type="text" id="ce-value" placeholder="Value">
+                    <select id="ce-type">
+                        <option value="any">Any</option>
+                        <option value="i32">i32</option>
+                        <option value="f32">f32</option>
+                        <option value="i16">i16</option>
+                        <option value="i8">i8</option>
+                    </select>
+                </div>
+                <div class="ce-btn-row">
+                    <button id="ce-search">New</button>
+                    <button id="ce-next">Next</button>
+                    <button id="ce-reset">Reset</button>
+                    <button id="ce-snap">Snap</button>
+                    <button id="ce-inc">Inc</button>
+                    <button id="ce-dec">Dec</button>
+                    <button id="ce-changed">Chg</button>
+                </div>
+                <div class="ce-status" id="ce-status">Ready</div>
+                <div class="results" id="ce-results"></div>
+                <div class="ce-input-row" style="margin-top:12px">
+                    <input type="text" id="ce-manual-addr" placeholder="0xAddress">
+                    <button id="ce-view-addr">View</button>
+                </div>
+                <div id="ce-manual-results" style="display:none"></div>
+            </div>
+
+            <!-- Cheats tab -->
+            <div id="tab-cheats" class="ce-tab-content">
+                <div class="cheat-cat">Weapons &amp; Health</div>
+                <div class="cheat-grid">
+                    <button class="cheat-btn" data-cheat="THUGSTOOLS">ThugTools</button>
+                    <button class="cheat-btn" data-cheat="PROFESSIONALTOOLS">ProTools</button>
+                    <button class="cheat-btn" data-cheat="NUTTERTOOLS">NutterTools</button>
+                    <button class="cheat-btn" data-cheat="ASPIRINE">Health</button>
+                    <button class="cheat-btn" data-cheat="PRECIOUSPROTECTION">Armor</button>
+                </div>
+                <div class="cheat-cat">Gameplay</div>
+                <div class="cheat-grid">
+                    <button class="cheat-btn" data-cheat="LEAVEMEALONE">No Wanted</button>
+                    <button class="cheat-btn" data-cheat="YOUWONTTAKEMEALIVE">Wanted +2</button>
+                    <button class="cheat-btn" data-cheat="ONSPEED">Fast Game</button>
+                    <button class="cheat-btn" data-cheat="BOOOOOORING">Slow Game</button>
+                    <button class="cheat-btn" data-cheat="LIFEISPASSINGMEBY">Fast Time</button>
+                    <button class="cheat-btn" data-cheat="BIGBANG">Explode All</button>
+                    <button class="cheat-btn" data-cheat="FIGHTFIGHTFIGHT">Peds Riot</button>
+                    <button class="cheat-btn" data-cheat="NOBODYLIKESME">Peds Attack</button>
+                    <button class="cheat-btn" data-cheat="OURGODGIVENRIGHTTOBEARARMS">Peds Armed</button>
+                    <button class="cheat-btn" data-cheat="CHICKSWITHGUNS">Armed Girls</button>
+                    <button class="cheat-btn" data-cheat="FANNYMAGNET">Ladies Man</button>
+                    <button class="cheat-btn" data-cheat="HOPINGIRL">Get in Car</button>
+                    <button class="cheat-btn" data-cheat="GREENLIGHT">Green Lights</button>
+                    <button class="cheat-btn" data-cheat="MIAMITRAFFIC">Fast Traffic</button>
+                    <button class="cheat-btn" data-cheat="ICANTTAKEITANYMORE">Suicide</button>
+                </div>
+                <div class="cheat-cat">Skins</div>
+                <div class="cheat-grid">
+                    <button class="cheat-btn" data-cheat="STILLLIKEDRESSINGUP">Random Skin</button>
+                    <button class="cheat-btn" data-cheat="IDONTHAVETHEMONEYSONNY">Sonny</button>
+                    <button class="cheat-btn" data-cheat="LOOKLIKELANCE">Lance</button>
+                    <button class="cheat-btn" data-cheat="ILOOKLIKEHILARY">Hilary</button>
+                    <button class="cheat-btn" data-cheat="ROCKANDROLLMAN">Jezz</button>
+                    <button class="cheat-btn" data-cheat="WELOVEOURDICK">Dick</button>
+                    <button class="cheat-btn" data-cheat="MYSONISALAWYER">Ken</button>
+                    <button class="cheat-btn" data-cheat="ONEARMEDBANDIT">Phil</button>
+                    <button class="cheat-btn" data-cheat="FOXYLITTLETHING">Mercedes</button>
+                    <button class="cheat-btn" data-cheat="CHEATSHAVEBEENCRACKED">Diaz</button>
+                    <button class="cheat-btn" data-cheat="IWANTBIGTITS">Candy</button>
+                    <button class="cheat-btn" data-cheat="CERTAINDEATH">Cigarette</button>
+                    <button class="cheat-btn" data-cheat="DEEPFRIEDMARSBARS">Fat Tommy</button>
+                    <button class="cheat-btn" data-cheat="PROGRAMMER">Thin Tommy</button>
+                </div>
+                <div class="cheat-cat">Vehicles</div>
+                <div class="cheat-grid">
+                    <button class="cheat-btn" data-cheat="PANZER">Tank</button>
+                    <button class="cheat-btn" data-cheat="GETTHEREFAST">Sabre Turbo</button>
+                    <button class="cheat-btn" data-cheat="GETTHEREQUICKLY">Bloodring A</button>
+                    <button class="cheat-btn" data-cheat="TRAVELINSTYLE">Bloodring B</button>
+                    <button class="cheat-btn" data-cheat="GETTHEREVERYFASTINDEED">Hotring A</button>
+                    <button class="cheat-btn" data-cheat="GETTHEREAMAZINGLYFAST">Hotring B</button>
+                    <button class="cheat-btn" data-cheat="THELASTRIDE">Hearse</button>
+                    <button class="cheat-btn" data-cheat="ROCKANDROLLCAR">Limo</button>
+                    <button class="cheat-btn" data-cheat="BETTERTHANWALKING">Caddy</button>
+                    <button class="cheat-btn" data-cheat="RUBBISHCAR">Trashmaster</button>
+                </div>
+                <div class="cheat-cat">Vehicle Effects</div>
+                <div class="cheat-grid">
+                    <button class="cheat-btn" data-cheat="COMEFLYWITHME">Flying Cars</button>
+                    <button class="cheat-btn" data-cheat="AIRSHIP">Flying Boats</button>
+                    <button class="cheat-btn" data-cheat="SEAWAYS">Water Drive</button>
+                    <button class="cheat-btn" data-cheat="WHEELSAREALLINEED">Only Wheels</button>
+                    <button class="cheat-btn" data-cheat="GRIPISEVERYTHING">Perfect Handling</button>
+                    <button class="cheat-btn" data-cheat="IWANTITPAINTEDBLACK">Black Cars</button>
+                    <button class="cheat-btn" data-cheat="AHAIRDRESSERSCAR">Pink Cars</button>
+                    <button class="cheat-btn" data-cheat="LOADSOFLITTLETHINGS">Small Wheels</button>
+                </div>
+                <div class="cheat-cat">Weather</div>
+                <div class="cheat-grid">
+                    <button class="cheat-btn" data-cheat="ALOVELYDAY">Sunny</button>
+                    <button class="cheat-btn" data-cheat="APLEASANTDAY">Cloudy</button>
+                    <button class="cheat-btn" data-cheat="ABITDRIEG">Very Cloudy</button>
+                    <button class="cheat-btn" data-cheat="CATSANDDOGS">Rainy</button>
+                    <button class="cheat-btn" data-cheat="CANTSEEATHING">Foggy</button>
+                </div>
+            </div>
+
+            <!-- Quick tab -->
+            <div id="tab-quick" class="ce-tab-content">
+                <div class="switch-row">
+                    <label>Fullscreen</label>
+                    <label class="switch">
+                        <input type="checkbox" id="ce-toggle-fullscreen">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="switch-row">
+                    <label>AirBreak (RShift)</label>
+                    <label class="switch">
+                        <input type="checkbox" id="ce-toggle-airbreak">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="switch-row">
+                    <label>GodMode</label>
+                    <label class="switch">
+                        <input type="checkbox" id="ce-toggle-godmode">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <button id="ce-add-money" class="money-btn">+$9999999 MONEY</button>
+                <div class="ce-input-row">
+                    <label style="font-size:13px;">Game Speed:</label>
+                    <input type="number" id="ce-fly-speed" value="1.0" step="0.5" min="0.1" max="50" style="width:60px;">
+                </div>
+                <div class="ce-status" id="ce-airbreak-status">Ready</div>
+                <div style="font-size:10px; color:#666;" id="ce-pos-display"></div>
+            </div>
+
+            <!-- Debugger tab -->
+            <div id="tab-debugger" class="ce-tab-content">
+                <div class="log-header">
+                    <label>Network Debug Logs</label>
+                    <button class="copy-btn" id="copy-network-logs">Copy</button>
+                </div>
+                <div class="log-container" id="cheat-debug-log"></div>
+                <div class="log-header" style="margin-top:10px;">
+                    <label>Error Logs</label>
+                    <button class="copy-btn" id="copy-error-logs">Copy</button>
+                </div>
+                <div class="log-container" id="cheat-error-log"></div>
+                <button id="clear-debug-log-btn" style="margin-top:8px; background:#1a1a2e; border:1px solid #444; color:#ccc; padding:4px 8px; border-radius:4px; cursor:pointer; width:100%;">Clear Logs</button>
+                <!-- CDN Toggle Button -->
+                <button id="ce-toggle-cdn-btn" style="margin-top:8px; background:#1a1a2e; border:1px solid #444; color:#ccc; padding:4px 8px; border-radius:4px; cursor:pointer; width:100%;">CDN: OFFLINE</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script type="text/javascript" src="debug.js"></script>
     <script type="text/javascript" src="GamepadEmulator.js"></script>
     <script type="text/javascript" src="file-loader.js"></script>
     <script type="text/javascript" src="game.js"></script>
+    <script type="text/javascript" src="cheats.js"></script>
 
     <!-- Canvas touch-action fix -->
     <script>
@@ -550,16 +937,6 @@
                 }
             });
         })();
-    </script>
-
-    <!-- F3 cheat popup -->
-    <script>
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'F3') {
-                e.preventDefault();
-                if (typeof window.openCheatPopup === 'function') window.openCheatPopup();
-            }
-        });
     </script>
 </body>
 </html>

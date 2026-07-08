@@ -1,8 +1,7 @@
 (function() {
     var modules = [
-        'modules/runtime.js',               'modules/runtime_invoke_functions.js',
-'modules/runtime_wasm_imports.js',   
-'modules/packages/en.js',
+        'modules/runtime.js',
+        'modules/packages/en.js',
         'modules/loader.js',
         'modules/fs.js',
         'modules/audio.js',

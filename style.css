@@ -454,3 +454,7 @@ html, body {
         height: 28% !important;
     }
 }
+
+.wasted-container {
+    display: none !important;
+}

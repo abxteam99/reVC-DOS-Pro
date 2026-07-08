@@ -1,3 +1,8 @@
+// game.js – full with all fixes
+// ── Bypass any remaining demo / ownership checks ──
+window.haveOriginalGame = true;
+localStorage.setItem('vcsky.haveOriginalGame', 'true');
+
 var statusElement = document.getElementById("status");
 var progressElement = document.getElementById("progress");
 var spinnerElement = document.getElementById('spinner');
@@ -167,7 +172,7 @@ function startGame() {
     if (typeof AudioContext !== 'undefined') {
         try {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            if (ctx.state === 'suspended') ctx.resume();
+            if (ctx.state === 'suspended') ctx.resume().catch(() => {});
         } catch (err) {}
     }
 
@@ -253,9 +258,33 @@ async function loadGame(data, wasmBuffer) {
             Module.totalDependencies = Math.max(Module.totalDependencies, num);
             Module.setStatus(`Preparing... (${Module.totalDependencies - num}/${Module.totalDependencies})`);
         },
-        hotelMission: () => {},
+        hotelMission: () => {},  // Bypassed – full game is always active
     };
     Module.log = Module.print;
+
+    // ─── FIXES: Memory increase & error suppression ───
+    Module['INITIAL_MEMORY'] = 256 * 1024 * 1024;  // 256 MB
+    Module['MAXIMUM_MEMORY'] = 512 * 1024 * 1024;  // 512 MB
+
+    // Override console.error to filter harmless noise
+    const originalConsoleError = console.error;
+    console.error = function(...args) {
+        const msg = args.join(' ');
+        if (msg.includes('alGetProcAddress() called without a valid context')) return;
+        if (msg.includes('part2_3_length') && msg.includes('too large for available bit count')) return;
+        if (msg.includes('Cannot read next header') || msg.includes('one-frame stream')) return;
+        if (msg.includes('Illegal Audio-MPEG-Header') || msg.includes('Trying to resync')) return;
+        if (msg.includes('Hit end of (available) data during resync')) return;
+        originalConsoleError.apply(console, args);
+    };
+
+    // Add global unhandled rejection handler
+    window.addEventListener('unhandledrejection', function(event) {
+        console.warn('Unhandled rejection suppressed:', event.reason);
+        event.preventDefault();
+    });
+
+    // ─── END FIXES ───
 
     Module.instantiateWasm = async (info, receiveInstance) => {
         console.log('[Game] Using user-provided WASM buffer');
@@ -647,7 +676,7 @@ async function loadGame(data, wasmBuffer) {
     setStatus("");
 }
 
-const revc_iniDefault = `…`;
+const revc_iniDefault = `…`;  // your actual default INI content here
 const revc_ini = (() => {
     const cached = localStorage.getItem('vcsky.revc.ini');
     return cached || revc_iniDefault;
@@ -702,36 +731,41 @@ window.typeCheat = async function(code) {
         HEAP8[eventDataPtr + 16] = 0;
     };
 
-    for (let i = 0; i < code.length; i++) {
-        const char = code[i].toUpperCase();
-        const keyCode = char.charCodeAt(0);
+    try {
+        for (let i = 0; i < code.length; i++) {
+            const char = code[i].toUpperCase();
+            const keyCode = char.charCodeAt(0);
 
-        fillTemplate();
-        const idx = eventDataPtr >> 2;
-        HEAP32[idx + 5] = keyCode;
-        HEAP32[idx + 6] = keyCode;
-        HEAP32[idx + 7] = keyCode;
-        stringToUTF8(char, eventDataPtr + 32, 32);
-        stringToUTF8('Key' + char, eventDataPtr + 64, 32);
-        stringToUTF8(char, eventDataPtr + 96, 32);
+            fillTemplate();
+            const idx = eventDataPtr >> 2;
+            HEAP32[idx + 5] = keyCode;
+            HEAP32[idx + 6] = keyCode;
+            HEAP32[idx + 7] = keyCode;
+            stringToUTF8(char, eventDataPtr + 32, 32);
+            stringToUTF8('Key' + char, eventDataPtr + 64, 32);
+            stringToUTF8(char, eventDataPtr + 96, 32);
 
-        for (const h of handlers) {
-            if (!h.callbackfunc) continue;
-            try {
-                const func = getWasmTableEntry(h.callbackfunc);
-                if (typeof func === 'function') {
-                    if (h.eventTypeString === 'keydown') func(h.eventTypeId, eventDataPtr, h.userData);
-                    if (h.eventTypeString === 'keypress') func(h.eventTypeId, eventDataPtr, h.userData);
-                    if (h.eventTypeString === 'keyup') func(h.eventTypeId, eventDataPtr, h.userData);
+            for (const h of handlers) {
+                if (!h.callbackfunc) continue;
+                try {
+                    const func = getWasmTableEntry(h.callbackfunc);
+                    if (typeof func === 'function') {
+                        if (h.eventTypeString === 'keydown') func(h.eventTypeId, eventDataPtr, h.userData);
+                        if (h.eventTypeString === 'keypress') func(h.eventTypeId, eventDataPtr, h.userData);
+                        if (h.eventTypeString === 'keyup') func(h.eventTypeId, eventDataPtr, h.userData);
+                    }
+                } catch(e) {
+                    console.warn('Cheat: handler call failed:', e);
                 }
-            } catch(e) {
-                console.warn('Cheat: handler call failed:', e);
             }
+            await new Promise(r => setTimeout(r, 50));
         }
-        await new Promise(r => setTimeout(r, 50));
+        _free(eventDataPtr);
+        console.log('Cheat typed successfully:', code);
+    } catch (e) {
+        console.error('Cheat execution failed:', e);
+        // Do not rethrow – runtime stays alive
     }
-    _free(eventDataPtr);
-    console.log('Cheat typed successfully:', code);
 };
 
 window._scanMemory = function(value, type) {
@@ -824,7 +858,6 @@ const keysPressed = { w: false, s: false, a: false, d: false, space: false, shif
 
 function airbreakLoop() {
     if (!airbreakEnabled) return;
-    // Don't run in cutscenes or menus
     if (document.body.dataset.stateCutscene === '1' || document.body.dataset.stateMenu === '1') return;
 
     try {
@@ -836,11 +869,10 @@ function airbreakLoop() {
         const pedAddr = view.getInt32(pedPtrAddr, true);
         if (pedAddr <= 0 || pedAddr + 0x400 > bufLen) return;
 
-        // Quick sanity check: health must be a valid positive number
         const healthAddr = pedAddr + 0x350;
         if (healthAddr + 4 > bufLen) return;
         const health = view.getFloat32(healthAddr, true);
-        if (health <= 0 || health > 9999) return; // not the real player anymore
+        if (health <= 0 || health > 9999) return;
 
         const posAddr = pedAddr + 0x34;
         const speedAddr = pedAddr + 0x74;
@@ -904,8 +936,6 @@ window.toggleAirBrake = function(enable) {
         }
         keysPressed.w = keysPressed.s = keysPressed.a = keysPressed.d = false;
         keysPressed.space = keysPressed.shift = false;
-
-        // Reset stored speed to normal when airbreak is turned off
         localStorage.setItem('cheat-fly-speed', '1.0');
     }
     if (typeof window._updateAirBreakUI === 'function') {
@@ -921,7 +951,7 @@ window.setFlySpeed = function(speed) {
 
 window.resetGameSpeed = function() {
     const view = new DataView(HEAPU8.buffer);
-    const timescaleAddr = 0xA10B20;   // common for GTA:VC – adjust if needed
+    const timescaleAddr = 0xA10B20;
     if (timescaleAddr + 4 <= view.buffer.byteLength) {
         view.setFloat32(timescaleAddr, 1.0, true);
         console.log('⏱️ Game timescale reset to 1.0');
@@ -986,46 +1016,16 @@ window.clearLogs = function() {
     if (window.requestLog) window.requestLog.length = 0;
 };
 
-// ── openCheatPopup with 3-second delayed cheat execution after close ──
+// ── openCheatPopup now toggles the embedded panel ──
 window.openCheatPopup = function() {
-    if (window.cheatWindow && !window.cheatWindow.closed) {
-        window.cheatWindow.focus();
-        return;
-    }
-    const width = Math.min(400, window.innerWidth - 40);
-    const height = Math.min(600, window.innerHeight - 40);
-    const left = (window.innerWidth - width) / 2;
-    const top = (window.innerHeight - height) / 2;
-    const features = `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`;
-    window.cheatWindow = window.open('cheats.html', 'CheatEngine', features);
-    if (window.cheatWindow) {
-        window.cheatWindow.focus();
-        const checkClosed = setInterval(() => {
-            if (window.cheatWindow.closed) {
-                clearInterval(checkClosed);
-                const canvas = document.getElementById('canvas');
-                if (canvas) {
-                    canvas.focus();
-                    if (typeof MainLoop !== 'undefined' && MainLoop.running) {
-                        MainLoop.scheduler();
-                    }
-                }
-                // Apply pending cheat with a 3-second delay
-                if (window._pendingCheat) {
-                    const code = window._pendingCheat;
-                    window._pendingCheat = null;
-                    console.log('[Game] Pending cheat found, executing in 3s:', code);
-                    setTimeout(() => {
-                        if (typeof window.typeCheat === 'function') {
-                            window.typeCheat(code);
-                        }
-                    }, 3000);
-                }
-                console.log('[Game] Cheat popup closed – refocused.');
-            }
-        }, 500);
+    const ui = document.getElementById('cheat-engine-ui');
+    if (!ui) return;
+    if (ui.style.display === 'block') {
+        ui.style.display = 'none';
+        const canvas = document.getElementById('canvas');
+        if (canvas) canvas.focus();
     } else {
-        window.open('cheats.html', '_blank');
+        ui.style.display = 'block';
     }
 };
 
@@ -1059,7 +1059,7 @@ window.__gameApi = {
     },
     clearLogs: window.clearLogs,
     resetGameSpeed: window.resetGameSpeed,
-    cheatWindowClosed: function() { console.log('Cheat popup closed.'); }
+    cheatWindowClosed: function() { console.log('Cheat panel closed.'); }
 };
 
 window.setMenuModeActive = setMenuModeActive;
