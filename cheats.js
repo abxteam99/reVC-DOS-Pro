@@ -1,4 +1,5 @@
 // cheats.js – embedded cheat engine (no popup, direct API)
+// with CDN toggle button working (touch + click)
 
 (function() {
     const ui = document.getElementById('cheat-engine-ui');
@@ -28,7 +29,6 @@
         }
         try {
             const res = window.__gameApi[method](...args);
-            // If the result is a promise (async functions), handle it
             return res instanceof Promise ? res : Promise.resolve(res);
         } catch (e) {
             return Promise.reject(e);
@@ -288,6 +288,34 @@
         gameApi('clearLogs');
         updateStatus('Logs cleared');
     });
+
+    // ––– CDN Mode Toggle (with touch and click) –––
+    (function initCDNToggle() {
+        var btn = document.getElementById('ce-toggle-cdn-btn');
+        if (!btn) {
+            setTimeout(initCDNToggle, 100);
+            return;
+        }
+        function updateButton() {
+            var online = localStorage.getItem('debug_online') === 'true';
+            btn.textContent = 'CDN: ' + (online ? 'ONLINE' : 'OFFLINE');
+            btn.style.color = online ? '#0f0' : '#ccc';
+        }
+        function toggleMode() {
+            if (typeof window.toggleCDNMode !== 'function') {
+                alert('CDN toggle not available – ensure debug.js is loaded.');
+                return;
+            }
+            window.toggleCDNMode();
+            setTimeout(updateButton, 50);
+        }
+        btn.addEventListener('click', toggleMode);
+        btn.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            toggleMode();
+        }, { passive: false });
+        updateButton();
+    })();
 
     // ––– Close button –––
     document.getElementById('cheat-close-btn').addEventListener('click', () => {
