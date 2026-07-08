@@ -616,14 +616,3 @@ var wasmImports = {
     hc: _llvm_eh_typeid_for
     
 };
-
-var _llvm_eh_typeid_for = type => type;
-var dynCall = (sig, ptr, args = [], promising = false) => {
-    var func = getWasmTableEntry(ptr);
-    var rtn = func(...args);
-
-    function convert(rtn) {
-        return rtn
-    }
-    return convert(rtn)
-};
